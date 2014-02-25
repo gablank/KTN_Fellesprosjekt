@@ -4,28 +4,6 @@ KTN-project 2013 / 2014
 import socket
 
 
-
-
-
-
-
-
-
-hei
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Client(object):
 
     def __init__(self):
