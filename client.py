@@ -23,11 +23,19 @@ class Client(object):
 
     def login(self):
         self.username = raw_input("Select username: ")
+
         loginRequestMessage = LoginRequestMessage()
         loginRequestMessage.set_login_info(self.username)
         network_data = loginRequestMessage.get_JSON()
         self.send(network_data)
         print self.connection.recv(1024).strip()
+
+        chatRequestMessage = ChatRequestMessage()
+        chatRequestMessage.set_chat_message("Dette er en test!")
+        network_data = chatRequestMessage.get_JSON()
+        self.send(network_data)
+        print self.connection.recv(1024).strip()
+
         self.connection.close()
 
     def send(self, data):
@@ -38,5 +46,5 @@ class Client(object):
 
 
 if __name__ == "__main__":
-    client = Client('localhost', 9999)
+    client = Client('localhost', 9998)
     client.login()
