@@ -19,7 +19,7 @@ from threading import Thread
 class ReceiveMessageWorker(Thread):
 
     def __init__(self, listener, connection):
-        self.daemeon = True
+        self.daemon = True
 
     def run(self):
         pass

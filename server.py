@@ -14,8 +14,18 @@ client.
 '''
 
 
-class CLientHandler(SocketServer.BaseRequestHandler):
+class Persistence:
+    def __init__(self):
+        self.messages = []
+        self.users = {}
+
+
+
+class ClientHandler(SocketServer.BaseRequestHandler):
+    persist = Persistence()
+
     def handle(self):
+
         # Get a reference to the socket object
         self.connection = self.request
         # Get the remote ip adress of the socket
@@ -47,8 +57,12 @@ if __name__ == "__main__":
     HOST = 'localhost'
     PORT = 9999
 
+    persist = Persistence()
+
+    ClientHandler.persist = persist
+
     # Create the server, binding to localhost on port 9999
-    server = ThreadedTCPServer((HOST, PORT), CLientHandler)
+    server = ThreadedTCPServer((HOST, PORT), ClientHandler)
 
     # Activate the server; this will keep running until you
     # interrupt the program with Ctrl-C
