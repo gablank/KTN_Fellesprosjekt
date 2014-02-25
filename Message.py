@@ -12,11 +12,11 @@ class Message(object):
         self.message_attributes = {}
         self.complete = False
 
-    def completeGuard(self):
+    def complete_guard(self):
         if self.complete:
             raise MessageException("Message already complete!")
 
-    def pack_JSON(self):
+    def get_JSON(self):
         if not self.complete:
             raise MessageException("Attempted to pack unfinished message!")
 
@@ -29,7 +29,7 @@ class LoginRequestMessage(Message):
         self.message_attributes["request"] = "login"
 
     def set_login_info(self, username):
-        self.completeGuard()
+        self.complete_guard()
         self.message_attributes["username"] = username
         self.complete = True
 
@@ -40,19 +40,19 @@ class LoginResponseMessage(Message):
         self.message_attributes["response"] = "login"
 
     def set_success(self, username, message_log):
-        self.completeGuard()
+        self.complete_guard()
         self.message_attributes["username"] = username
         self.message_attributes["messages"] = message_log
         self.complete = True
 
     def set_invalid_username(self, username):
-        self.completeGuard()
+        self.complete_guard()
         self.message_attributes["username"] = username
         self.message_attributes["error"] = "Invalid username!"
         self.complete = True
 
     def set_taken_username(self, username):
-        self.completeGuard()
+        self.complete_guard()
         self.message_attributes["username"] = username
         self.message_attributes["error"] = "Name already taken!"
         self.complete = True
@@ -64,7 +64,7 @@ class ChatRequestMessage(Message):
         self.message_attributes["request"] = "message"
 
     def set_chat_message(self, message):
-        self.completeGuard()
+        self.complete_guard()
         self.message_attributes["message"] = message
         self.complete = True
 
@@ -75,12 +75,12 @@ class ChatResponseMessage(Message):
         self.message_attributes["response"] = "message"
 
     def set_success(self, message):
-        self.completeGuard()
+        self.complete_guard()
         self.message_attributes["message"] = message
         self.complete = True
 
     def set_not_logged_in(self):
-        self.completeGuard()
+        self.complete_guard()
         self.message_attributes["error"] = "You are not logged in!"
         self.complete = True
 
@@ -98,12 +98,12 @@ class LogoutResponseMessage(Message):
         self.message_attributes["response"] = "logout"
 
     def set_success(self, username):
-        self.completeGuard()
+        self.complete_guard()
         self.message_attributes["username"] = username
         self.complete = True
 
     def set_not_logged_in(self, username):
-        self.completeGuard()
+        self.complete_guard()
         self.message_attributes["username"] = username
         self.message_attributes["error"] = "Not logged in!"
         self.complete = True
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     loginRequestMessage = LoginRequestMessage()
 
     try:
-        loginRequestMessage.pack_JSON()
+        loginRequestMessage.get_JSON()
     except MessageException, e:
         print "Guard test #1 successful"
     else:
@@ -132,4 +132,4 @@ if __name__ == "__main__":
     else:
         print "Guard test #2 unsuccessful"
 
-    print "LoginRequestMessage: " + loginRequestMessage.pack_JSON()
+    print "LoginRequestMessage: " + loginRequestMessage.get_JSON()
