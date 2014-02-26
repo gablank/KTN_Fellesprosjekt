@@ -144,7 +144,6 @@ class Client(object):
     def input(self, prompt):
         print "\r" + prompt,
         input_text = sys.stdin.readline().strip()
-        print input_text
         return input_text
 
 
