@@ -171,6 +171,10 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                                 now_string = time.strftime("%H:%M:%S")
                                 controller.notify_message(self.username + " " + now_string + ": " + message, self)
 
+                    elif request == "listUsers":
+                        responseMessage = ListUsersResponseMessage()
+                        responseMessage.set_users(controller.get_all_online())
+
 
                     elif request == "logout":
                         responseMessage = LogoutResponseMessage()
