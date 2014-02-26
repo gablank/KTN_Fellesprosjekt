@@ -3,6 +3,7 @@ KTN-project 2013 / 2014
 '''
 import socket
 from Message import *
+from MessageWorker import MessageWorker
 
 
 class Client(object):
