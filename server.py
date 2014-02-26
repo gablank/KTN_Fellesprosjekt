@@ -4,9 +4,11 @@ Very simple server implementation that should serve as a basis
 for implementing the chat server
 '''
 import SocketServer
-from Message import *
-import json
-import re
+from Message import *  # All Message types
+import datetime        # Get current date (for displaying when a chat message was sent)
+import time            # Get current time (for displaying when a chat message was sent)
+import json            # decode network data
+import re              # For validation of username
 
 '''
 The RequestHandler class for our server.
@@ -71,7 +73,6 @@ class Controller:
 
 
 
-
 class ClientHandler(SocketServer.BaseRequestHandler):
     controller = Controller()
 
@@ -79,25 +80,29 @@ class ClientHandler(SocketServer.BaseRequestHandler):
         self.connection = self.request
 
     def handle(self):
+        # Initialize username to None so we know the user isn't logged in
         username = None
-        state = "new"
 
         # Get a reference to the socket object
         self.connection = self.request
+
         # Get the remote ip address of the socket
         self.ip = self.client_address[0]
+
         # Get the remote port number of the socket
         self.port = self.client_address[1]
+
         print 'Client connected @' + self.ip + ':' + str(self.port)
 
 
         while True:
             # Wait for data from the client
             json_data = self.connection.recv(1024).strip()
-            # Check if the data exists
-            # (recv could have returned due to a disconnect)
+
+            # Check if the data exists (if it doesn't it means the client disconnected)
             if json_data:
-                print controller.get_all_online()
+
+                # responseMessage will be the message to return
                 responseMessage = None
                 data = json.loads(json_data)
 
@@ -127,10 +132,10 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                             else:
                                 responseMessage.set_taken_username(username)
                                 username = None
+
                         else:
-                            print "Required field 'username' not present!"
-                            self.connection.sendall("Required field 'username' not present!")
-                            break
+                            responseMessage = ProtocolErrorMessage()
+                            responseMessage.set_error_message("Required field 'username' not present!")
 
 
                     elif request == "message":
@@ -149,7 +154,9 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                                 responseMessage.set_success(message)
 
                                 # This also broadcasts to everyone except the sender
+                                now_string = datetime.date.today().strftime("%d/%m/%Y ") + time.strftime("%H:%M:%S")
                                 controller.notify_message(username + " " + time.time() + ": " + message, self)
+
 
                     elif request == "logout":
                         responseMessage = LogoutResponseMessage()
@@ -166,13 +173,12 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                             responseMessage.set_not_logged_in(username)
 
                     else:
-                        print "Request field should be one of 'login', 'message' and 'logout'!"
-                        self.connection.sendall("Request field should be one of 'login', 'message' and 'logout'!")
-                        break
+                        responseMessage = ProtocolErrorMessage()
+                        responseMessage.set_error_message("Request field should be one of 'login', 'message' and 'logout'!")
+
                 else:
-                    print "Required field 'username' not present!"
-                    self.connection.sendall("Required field 'username' not present!")
-                    break
+                    responseMessage = ProtocolErrorMessage()
+                    responseMessage.set_error_message("Required field 'username' not present!")
 
                 if responseMessage is not None:
                     json_data = responseMessage.get_JSON()
