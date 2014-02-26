@@ -45,7 +45,7 @@ class Client(object):
 
             else:
                 self.output("Client: Invalid username!")
-                self.output(new_username)
+
 
         self.output("Logged in as " + self.username)
 
@@ -123,7 +123,7 @@ class Client(object):
             self.output("Server makes no sense, me don't understand!")
 
     def valid_username(self, username):
-        match_obj = re.search('[A-zæøåÆØÅ_0-9]+', username)
+        match_obj = re.search(u'[A-zæøåÆØÅ_0-9]+', username)
         return match_obj is not None and match_obj.group(0) == username
 
     # Server closed connection
@@ -144,7 +144,7 @@ class Client(object):
     # Get input
     def input(self, prompt):
         print "\r" + prompt,
-        return sys.stdin.readline().strip()
+        return sys.stdin.readline().strip().decode("utf-8")
 
 
 
