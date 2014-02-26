@@ -97,10 +97,14 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 
         while True:
             # Wait for data from the client
-            json_data = self.connection.recv(1024).strip()
+            try:
+                json_data = self.connection.recv(1024).strip()
+            except:
+                break
 
             # Check if the data exists (if it doesn't it means the client disconnected)
             if json_data:
+                print "Message received from " + str(username) + ": " + str(json_data)
 
                 # responseMessage will be the message to return
                 responseMessage = None
@@ -151,7 +155,8 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 
                             # Everything is fine, send message back to sender and then broadcast to everyone else
                             else:
-                                responseMessage.set_success(message)
+                                #responseMessage.set_success(message)
+                                responseMessage = None
 
                                 # This also broadcasts to everyone except the sender
                                 now_string = datetime.date.today().strftime("%d/%m/%Y ") + time.strftime("%H:%M:%S")
@@ -185,11 +190,12 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                     self.connection.sendall(json_data)
 
             else:
-                print 'Client ' + str(username) + ' disconnected!'
-                controller.set_user_logged_out(username)
-                controller.unregister_client_handler(self)
-                self.connection.close()
                 break
+
+        print 'Client ' + str(username) + ' disconnected!'
+        controller.set_user_logged_out(username)
+        controller.unregister_client_handler(self)
+        self.connection.close()
 
 
 '''

@@ -6,6 +6,7 @@ from Message import *
 from MessageWorker import MessageWorker
 import threading
 import re
+import sys
 
 
 class Client(object):
@@ -37,7 +38,7 @@ class Client(object):
             self.login_response_event.wait()  # Blocks until message_received receives a LoginResponseMessage
 
         while self.run:
-            new_message = self.input("$: ")
+            new_message = self.input("")
 
             # Parse as cmd
             cmd = self.get_cmd(new_message)
@@ -47,7 +48,7 @@ class Client(object):
                 self.run = False
 
             elif not cmd:
-                self.output(new_message)
+                #self.output(new_message)
                 chatRequestMessage = ChatRequestMessage()
                 chatRequestMessage.set_chat_message(new_message)
                 self.send(chatRequestMessage)
@@ -59,7 +60,7 @@ class Client(object):
         self.output("Logged out, good bye!")
 
     def get_cmd(self, text):
-        if text[0] == '/':
+        if len(text) > 0 and text[0] == '/':
             return text[1:]
         else:
             return False
@@ -67,7 +68,7 @@ class Client(object):
 
     # Message is already decoded from JSON
     def message_received(self, data):
-        print "Message received from server: " + str(data)
+        #print "Message received from server: " + str(data)
         if "response" in data:
             if data["response"] == "login":
                 # Success
@@ -123,7 +124,8 @@ class Client(object):
 
     # Get input
     def input(self, prompt):
-        return raw_input(prompt)
+        print prompt,
+        return sys.stdin.readline().strip()
 
 
 if __name__ == "__main__":
