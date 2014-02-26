@@ -30,6 +30,8 @@ class Client(object):
 
         # Log in
         while self.username is None:
+            self.login_response_event.clear()
+
             new_username = self.input("Enter username: ")
             loginRequestMessage = LoginRequestMessage()
             loginRequestMessage.set_login_info(new_username)
