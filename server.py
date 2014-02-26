@@ -39,7 +39,7 @@ class Controller:
 
         for client_handler in self.client_handlers:
             if client_handler != __except:
-                client_handler.connection.sendall(json_data)
+                client_handler.send(json_data)
 
     # Returns:
     # True if username is taken
@@ -79,9 +79,17 @@ class ClientHandler(SocketServer.BaseRequestHandler):
     def connection_to_username(self):
         self.connection = self.request
 
+    def send(self, message):
+        try:
+            self.connection.sendall(message)
+        except:
+            controller.unregister_client_handler(self)
+            controller.set_user_logged_out(self.username)
+
+
     def handle(self):
         # Initialize username to None so we know the user isn't logged in
-        username = None
+        self.username = None
 
         # Get a reference to the socket object
         self.connection = self.request
@@ -104,7 +112,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 
             # Check if the data exists (if it doesn't it means the client disconnected)
             if json_data:
-                print "Message received from " + str(username) + ": " + str(json_data)
+                print "Message received from " + str(self.username) + ": " + str(json_data)
 
                 # responseMessage will be the message to return
                 responseMessage = None
@@ -116,26 +124,26 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                     if request == "login":
 
                         if "username" in data:
-                            username = data["username"]
+                            self.username = data["username"]
                             responseMessage = LoginResponseMessage()
 
                             # Check for invalid username
-                            if not controller.valid_username(username):
-                                responseMessage.set_invalid_username(username)
-                                username = None
+                            if not controller.valid_username(self.username):
+                                responseMessage.set_invalid_username(self.username)
+                                self.username = None
 
                             # See if we can log in (fails if already used)
-                            elif controller.set_user_logged_in(username):
-                                responseMessage.set_success(username, controller.get_all_messages())
-                                print "Client " + username + " logged in!"
+                            elif controller.set_user_logged_in(self.username):
+                                responseMessage.set_success(self.username, controller.get_all_messages())
+                                print "Client " + self.username + " logged in!"
 
                                 # Register this object so we get broadcast messages
                                 controller.register_client_handler(self)
 
                             # Username taken
                             else:
-                                responseMessage.set_taken_username(username)
-                                username = None
+                                responseMessage.set_taken_username(self.username)
+                                self.username = None
 
                         else:
                             responseMessage = ProtocolErrorMessage()
@@ -150,7 +158,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                             responseMessage = ChatResponseMessage()
 
                             # Not logged in, don't broadcast
-                            if not controller.get_user_logged_in(username):
+                            if not controller.get_user_logged_in(self.username):
                                 responseMessage.set_not_logged_in()
 
                             # Everything is fine, send message back to sender and then broadcast to everyone else
@@ -159,23 +167,24 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                                 responseMessage = None
 
                                 # This also broadcasts to everyone except the sender
-                                now_string = datetime.date.today().strftime("%d/%m/%Y ") + time.strftime("%H:%M:%S")
-                                controller.notify_message(username + " " + now_string + ": " + message, self)
+                                #datetime.date.today().strftime("%d/%m/%Y ")
+                                now_string = time.strftime("%H:%M:%S")
+                                controller.notify_message(self.username + " " + now_string + ": " + message, self)
 
 
                     elif request == "logout":
                         responseMessage = LogoutResponseMessage()
 
                         # All is fine, log user out and unregister ourselves so we don't receive broadcasts.
-                        if controller.get_user_logged_in(username):
-                            responseMessage.set_success(username)
-                            controller.set_user_logged_out(username)
+                        if controller.get_user_logged_in(self.username):
+                            responseMessage.set_success(self.username)
+                            controller.set_user_logged_out(self.username)
                             controller.unregister_client_handler(self)
-                            username = None
+                            self.username = None
 
                         # Can't log out: you need to log in first! :D
                         else:
-                            responseMessage.set_not_logged_in(username)
+                            responseMessage.set_not_logged_in(self.username)
 
                     else:
                         responseMessage = ProtocolErrorMessage()
@@ -187,13 +196,13 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 
                 if responseMessage is not None:
                     json_data = responseMessage.get_JSON()
-                    self.connection.sendall(json_data)
+                    self.send(json_data)
 
             else:
                 break
 
-        print 'Client ' + str(username) + ' disconnected!'
-        controller.set_user_logged_out(username)
+        print 'Client ' + str(self.username) + ' disconnected!'
+        controller.set_user_logged_out(self.username)
         controller.unregister_client_handler(self)
         self.connection.close()
 

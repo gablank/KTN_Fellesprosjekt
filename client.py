@@ -7,6 +7,7 @@ from MessageWorker import MessageWorker
 import threading
 import re
 import sys
+import time
 
 
 class Client(object):
@@ -33,32 +34,41 @@ class Client(object):
             self.login_response_event.clear()
 
             new_username = self.input("Enter username: ")
-            loginRequestMessage = LoginRequestMessage()
-            loginRequestMessage.set_login_info(new_username)
-            self.send(loginRequestMessage)
 
-            self.login_response_event.wait()  # Blocks until message_received receives a LoginResponseMessage
+            if self.valid_username(new_username):
+                loginRequestMessage = LoginRequestMessage()
+                loginRequestMessage.set_login_info(new_username)
+                self.send(loginRequestMessage)
+
+                self.login_response_event.wait()  # Blocks until message_received receives a LoginResponseMessage
+
+            else:
+                self.output("Client: Invalid username!")
+                self.output(new_username)
 
         self.output("Logged in as " + self.username)
 
         while self.run:
-            new_message = self.input("")
+            new_message = self.input("> ")
 
             # Parse as cmd
             cmd = self.get_cmd(new_message)
-            if cmd == 'logout':
-                logoutRequestMessage = LogoutRequestMessage()
-                self.send(logoutRequestMessage)
-                self.run = False
 
-            elif not cmd:
-                #self.output(new_message)
+            if not cmd:
+                now_string = time.strftime("%H:%M:%S")
+                self.output(self.username + " " + now_string + ": " + new_message)
                 chatRequestMessage = ChatRequestMessage()
                 chatRequestMessage.set_chat_message(new_message)
                 self.send(chatRequestMessage)
 
             else:
-                self.output("Invalid command!")
+                if cmd == "logout":
+                    logoutRequestMessage = LogoutRequestMessage()
+                    self.send(logoutRequestMessage)
+                    self.run = False
+
+                else:
+                    self.output("Unknown command: /" + cmd)
 
 
         self.output("Logged out, good bye!")
@@ -103,7 +113,6 @@ class Client(object):
 
         else:
             self.output("Server makes no sense, me don't understand!")
-            pass
 
     def valid_username(self, username):
         match_obj = re.search('[A-z_0-9]+', username)
@@ -112,9 +121,6 @@ class Client(object):
     # Server closed connection
     def connection_closed(self):
         self.message_worker.join()  # Wait for listener to exit
-
-    def login(self):
-        pass
 
     # data should be a Message object
     def send(self, data):
@@ -125,11 +131,11 @@ class Client(object):
 
     # Output this to console
     def output(self, line):
-        print line
+        print "\r" + line
 
     # Get input
     def input(self, prompt):
-        print prompt,
+        print "\r" + prompt,
         return sys.stdin.readline().strip()
 
 
