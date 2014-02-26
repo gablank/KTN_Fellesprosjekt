@@ -77,8 +77,8 @@ class Client(object):
         self.output("Logged out, good bye!")
 
     def get_cmd(self, text):
-        if len(text) > 0 and text[0] == '/':
-            return text[1:]
+        if len(text) > 1 and text[0] == '/':
+            return text[1:].lower()
         else:
             return False
 
@@ -115,7 +115,7 @@ class Client(object):
                     self.output(data["error"])
 
             elif data["response"] == "listUsers":
-                users_online_string = "Online users: " + data["users"].join(", ")
+                users_online_string = "Online users: " + ", ".join(data["users"])
                 self.output(users_online_string)
 
         else:
@@ -143,7 +143,9 @@ class Client(object):
     # Get input
     def input(self, prompt):
         print "\r" + prompt,
-        return sys.stdin.readline().strip()
+        input_text = sys.stdin.readline().strip()
+        print input_text
+        return input_text
 
 
 if __name__ == "__main__":
