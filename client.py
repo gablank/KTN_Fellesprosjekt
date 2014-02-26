@@ -67,9 +67,12 @@ class Client(object):
                     self.send(logoutRequestMessage)
                     self.run = False
 
+                elif cmd == "listusers":
+                    listUsersRequestMessage = ListUsersRequestMessage()
+                    self.send(listUsersRequestMessage)
+
                 else:
                     self.output("Unknown command: /" + cmd)
-
 
         self.output("Logged out, good bye!")
 
@@ -110,6 +113,10 @@ class Client(object):
                 # Error: not logged in
                 else:
                     self.output(data["error"])
+
+            elif data["response"] == "listUsers":
+                users_online_string = "Online users: " + data["users"].join(", ")
+                self.output(users_online_string)
 
         else:
             self.output("Server makes no sense, me don't understand!")
