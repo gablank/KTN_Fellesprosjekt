@@ -120,6 +120,23 @@ class ProtocolErrorMessage(Message):
         self.complete = True
 
 
+class ListUsersRequestMessage(Message):
+    def __init__(self):
+        super(ListUsersRequestMessage, self).__init__()
+        self.message_attributes["request"] = "listUsers"
+        self.complete = True
+
+
+class ListUsersResponseMessage(Message):
+    def __init__(self):
+        super(ListUsersResponseMessage, self).__init__()
+        self.message_attributes["response"] = "listUsers"
+
+    def set_users(self, users):
+        self.complete_guard()
+        self.message_attributes["users"] = users
+        self.complete = True
+
 
 # Testing
 if __name__ == "__main__":
