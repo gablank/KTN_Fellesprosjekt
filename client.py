@@ -37,6 +37,8 @@ class Client(object):
 
             self.login_response_event.wait()  # Blocks until message_received receives a LoginResponseMessage
 
+        self.output("Logged in as " + self.username)
+
         while self.run:
             new_message = self.input("")
 
