@@ -43,6 +43,7 @@ class Client(object):
             if cmd == 'logout':
                 logoutRequestMessage = LogoutRequestMessage()
                 self.send(logoutRequestMessage)
+                self.run = False
 
             elif not cmd:
                 self.output(new_message)
@@ -52,6 +53,9 @@ class Client(object):
 
             else:
                 self.output("Invalid command!")
+
+
+        self.output("Logged out, good bye!")
 
     def get_cmd(self, text):
         if text[0] == '/':
@@ -121,5 +125,5 @@ class Client(object):
 
 
 if __name__ == "__main__":
-    client = Client('localhost', 9998)
+    client = Client('www.furic.pw', 9998)
     client.start()
