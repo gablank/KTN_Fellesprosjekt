@@ -78,8 +78,6 @@ class Client(object):
                     for message in data["messages"]:
                         self.output(message)
 
-                    self.login_response_event.set()
-
 
                 elif data["error"] == "Invalid username!":
                     self.output("Invalid username!")
@@ -87,6 +85,9 @@ class Client(object):
 
                 elif data["error"] == "Name already taken!":
                     self.output("Name already taken!")
+
+                # Notify main thread
+                self.login_response_event.set()
 
             elif data["response"] == "message":
                 if not "error" in data:
