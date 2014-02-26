@@ -3,34 +3,6 @@ KTN-project 2013 / 2014
 '''
 import socket
 from Message import *
-import threading
-
-
-class MessageWorker(threading.Thread):
-    def __init__(self, connection, client):
-        super(MessageWorker, self).__init__(name="Listener")
-        self.connection = connection
-        self.client = client
-
-    def run(self):
-        run = True
-
-        while run:
-            json_data = self.connection.recv(1024).strip()
-
-            # Decode and send data to client
-            if json_data:
-                data = json.loads(json_data)
-                self.send_data(data)
-
-            # Server closed connection
-            else:
-                run = False
-
-        self.client.connection_closed()
-
-    def send_data(self, data):
-        self.client.message_received(data)
 
 
 class Client(object):
