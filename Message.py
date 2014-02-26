@@ -109,6 +109,16 @@ class LogoutResponseMessage(Message):
         self.complete = True
 
 
+class ProtocolErrorMessage(Message):
+    def __init__(self):
+        super(ProtocolErrorMessage, self).__init__()
+        self.message_attributes["response"] = "protocolError"
+
+    def set_error_message(self, message):
+        self.complete_guard()
+        self.message_attributes["error"] = message
+        self.complete = True
+
 
 
 # Testing
