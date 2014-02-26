@@ -122,7 +122,7 @@ class Client(object):
             self.output("Server makes no sense, me don't understand!")
 
     def valid_username(self, username):
-        match_obj = re.search('[A-z_0-9]+', username)
+        match_obj = re.search('[A-zæøåÆØÅ_0-9]+', username)
         return match_obj is not None and match_obj.group(0) == username
 
     # Server closed connection
@@ -143,8 +143,8 @@ class Client(object):
     # Get input
     def input(self, prompt):
         print "\r" + prompt,
-        input_text = sys.stdin.readline().strip()
-        return input_text
+        return sys.stdin.readline().strip()
+
 
 
 if __name__ == "__main__":

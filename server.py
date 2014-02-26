@@ -60,7 +60,7 @@ class Controller:
         return self.messages
 
     def valid_username(self, username):
-        match_obj = re.search('[A-z_0-9]+', username)
+        match_obj = re.search('[A-zæøåÆØÅ_0-9]+', username)
         return match_obj is not None and match_obj.group(0) == username
 
     def notify_message(self, message, client_handler):

@@ -13,11 +13,11 @@ class MessageWorker(Thread):
         run = True
 
         while run:
-            json_data = self.connection.recv(1024).strip()
+            json_data = self.connection.recv(1500).strip()
 
             # Decode and send data to client
             if json_data:
-                #print "Received data from server: " + json_data
+                print "Received data from server: " + json_data
 
                 data = json.loads(json_data)
                 self.send_data(data)
