@@ -60,7 +60,7 @@ class Controller:
         return self.messages
 
     def valid_username(self, username):
-        match_obj = re.search('[A-z_0-9]{1,}', username)
+        match_obj = re.search('[A-z_0-9]+', username)
         return match_obj is not None and match_obj.group(0) == username
 
     def notify_message(self, message, client_handler):
@@ -155,7 +155,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 
                                 # This also broadcasts to everyone except the sender
                                 now_string = datetime.date.today().strftime("%d/%m/%Y ") + time.strftime("%H:%M:%S")
-                                controller.notify_message(username + " " + time.time() + ": " + message, self)
+                                controller.notify_message(username + " " + now_string + ": " + message, self)
 
 
                     elif request == "logout":
