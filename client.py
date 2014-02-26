@@ -18,6 +18,7 @@ class Client(object):
 
         # Start the message worker (which listens on the connection and notifies us if it has received a message)
         self.message_worker = MessageWorker(self.connection, self)
+        self.message_worker.start()
 
         self.run = True
 
@@ -66,6 +67,7 @@ class Client(object):
 
     # Message is already decoded from JSON
     def message_received(self, data):
+        print "Message received from server: " + str(data)
         if "response" in data:
             if data["response"] == "login":
                 # Success
