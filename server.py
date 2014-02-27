@@ -10,6 +10,7 @@ import datetime        # Get current date (for displaying when a chat message wa
 import time            # Get current time (for displaying when a chat message was sent)
 import json            # decode network data
 import re              # For validation of username
+import sqlite3
 
 '''
 The RequestHandler class for our server.
@@ -25,6 +26,34 @@ class Controller:
         self.messages = []
         self.users = []
         self.client_handlers = []
+
+        # Connect to database called "chat.db" - create it if it doesn't exist
+        # check_same_thread=False enables access to the object from different threads
+        # TODO: Make it use a producer / consumer pattern instead?
+        self.db_con = sqlite3.connect("chat.db", check_same_thread=False)
+
+        # We're using this to query the database
+        self.db_cursor = self.db_con.cursor()
+
+        # Initialize db: Create the table if it doesn't exist
+        # Docs: http://sqlite.org/lang_createtable.html
+        # TODO: Extract this into its own function?
+        query = "CREATE TABLE IF NOT EXISTS chat_messages"
+        query += " (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT, sender TEXT, timestamp INT);"
+        self.db_cursor.execute(query)  # Run the query
+        self.db_con.commit()           # Save changes from memory to disk
+
+        # Load chat messages from database
+        self.load_chat_messages()
+
+    def load_chat_messages(self):
+        # Fetch all messages ordered by oldest first
+        # TODO: Fetching WILL get slower as the table grows
+        query = "SELECT * FROM chat_messages ORDER BY timestamp ASC;"
+
+        # Row is a tuple: (id, message, sender, timestamp)
+        for row in self.db_cursor.execute(query):
+            self.messages.append(row)
 
     def register_client_handler(self, client_handler):
         self.client_handlers.append(client_handler)
@@ -64,9 +93,18 @@ class Controller:
         match_obj = re.search(u'[A-zæøåÆØÅ_0-9]+', username)
         return match_obj is not None and match_obj.group(0) == username
 
-    def notify_message(self, message, client_handler):
-        self.messages.append(message)
-        self.broadcast(message, client_handler)
+    # sender is username of sender (for use in database)
+    def notify_message(self, message, sender, client_handler):
+        query = "INSERT INTO chat_messages (message, sender, timestamp) VALUES (?, ?, ?)"
+        now_as_int = int(time.time())
+        self.db_cursor.execute(query, (message, sender, now_as_int))
+        self.db_con.commit()  # Save to disk
+
+        message_id = self.db_cursor.lastrowid
+        message_row = (message_id, message, sender, now_as_int)
+        self.messages.append(message_row)
+
+        self.broadcast(message_row, client_handler)
 
     def set_user_logged_out(self, username):
         if username in self.users:
@@ -126,7 +164,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 
                         if "username" in data:
                             self.username = data["username"]
-                            print self.username
+
                             responseMessage = LoginResponseMessage()
 
                             # Check for invalid username
@@ -169,9 +207,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                                 responseMessage = None
 
                                 # This also broadcasts to everyone except the sender
-                                #datetime.date.today().strftime("%d/%m/%Y ")
-                                now_string = time.strftime("%H:%M:%S")
-                                controller.notify_message(self.username + " " + now_string + ": " + message, self)
+                                controller.notify_message(message, self.username, self)
 
                     elif request == "listUsers":
                         responseMessage = ListUsersResponseMessage()
@@ -200,6 +236,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                     responseMessage = ProtocolErrorMessage()
                     responseMessage.set_error_message("Required field 'username' not present!")
 
+                # Respond with responseMessage (if a response is required by the protocol)
                 if responseMessage is not None:
                     json_data = responseMessage.get_JSON()
                     self.send(json_data)
@@ -224,7 +261,8 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 if __name__ == "__main__":
     HOST = ''
-    PORT = 9998
+    #HOST = 'localhost'
+    PORT = 9999
 
     controller = Controller()
 

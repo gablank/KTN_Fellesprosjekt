@@ -23,6 +23,9 @@ class Client(object):
         self.message_worker = MessageWorker(self.connection, self)
         self.message_worker.start()
 
+        # Keep a list of messages client side too, for easier terminal formatting and deletion of messages
+        self.messages = []
+
         self.run = True
 
 
@@ -93,8 +96,12 @@ class Client(object):
                 if "error" not in data:
                     self.username = data["username"]
 
-                    for message in data["messages"]:
-                        self.output(message)
+                    self.messages = data["messages"]
+
+                    for message in self.messages:
+                        # Print the UNIX timestamp (message[3]) pretty as hh:mm:ss
+                        now_pretty_print = time.strftime("%H:%M:%S", time.localtime(message[3]))
+                        self.output("[" + str(message[0]) + "] " + message[2] + " @ " + now_pretty_print + ": " + message[1])
 
 
                 elif data["error"] == "Invalid username!":
@@ -149,5 +156,6 @@ class Client(object):
 
 
 if __name__ == "__main__":
-    client = Client('www.furic.pw', 9998)
+    client = Client('www.furic.pw', 9999)
+    #client = Client('localhost', 9999)
     client.start()
