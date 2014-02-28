@@ -7,9 +7,7 @@ from Message import *
 from MessageWorker import MessageWorker
 import threading
 import re
-import sys
 import time
-from _io import StringIO
 import sys
 
 
