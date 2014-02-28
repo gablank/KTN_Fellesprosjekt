@@ -76,7 +76,7 @@ class Controller:
 
         for client_handler in self.client_handlers:
             if client_handler != __except:
-                client_handler.send(bytes(json_data, "UTF-8"))
+                client_handler.send(json_data)
 
     # Returns:
     # True if username is taken
