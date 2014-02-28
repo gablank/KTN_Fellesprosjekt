@@ -9,6 +9,7 @@ import threading
 import re
 import sys
 import time
+from _io import StringIO
 
 
 class Client(object):
@@ -16,12 +17,13 @@ class Client(object):
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.connection.connect((host, port))
-
+ 
         self.login_response_event = threading.Event()
 
         # Start the message worker (which listens on the connection and notifies us if it has received a message)
         self.message_worker = MessageWorker(self.connection, self)
         self.message_worker.start()
+
 
         self.run = True
 
@@ -132,19 +134,19 @@ class Client(object):
 
     # data should be a Message object
     def send(self, data):
-        self.connection.sendall(data.get_JSON())
+        self.connection.sendall(data.get_JSON().encode("UTF-8"))
 
     def force_disconnect(self):
         self.connection.close()
 
     # Output this to console
     def output(self, line):
-        print "\r" + line
+        print("\r" + line)
 
     # Get input
     def input(self, prompt):
-        print "\r" + prompt,
-        return sys.stdin.readline().strip().decode("utf-8")
+        print("\r" + prompt)
+        return sys.stdin.readline().strip()
 
 
 
