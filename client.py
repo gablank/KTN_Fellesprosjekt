@@ -12,6 +12,7 @@ import time
 from _io import StringIO
 
 
+
 class Client(object):
     def __init__(self, host, port):
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
