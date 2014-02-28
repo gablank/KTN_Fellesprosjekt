@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-
-import json
-import sys
+import json  # Encode as JSON (only used in Message.get_JSON)
+import sys   # Exit if not Python 3
 
 
 if sys.version_info[0] != 3:

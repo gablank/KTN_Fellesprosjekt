@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
-'''
-KTN-project 2013 / 2014
-Very simple server implementation that should serve as a basis
-for implementing the chat server
-'''
 import socketserver
 from Message import *  # All Message types
 import time            # Get current time (for displaying when a chat message was sent)
 import json            # decode network data
 import re              # For validation of username
-import sys
-import sqlite3
+import sys             # Exit if not Python 3
+import sqlite3         # Database connection
 
 
 if sys.version_info[0] != 3:
@@ -18,13 +13,11 @@ if sys.version_info[0] != 3:
     sys.exit(1)
 
 
-'''
-The RequestHandler class for our server.
-
-It is instantiated once per connection to the server, and must
-override the handle() method to implement communication to the
-client.
-'''
+# The RequestHandler class for our server.
+#
+# It is instantiated once per connection to the server, and must
+# override the handle() method to implement communication to the
+# client.
 
 
 class Controller:
@@ -146,7 +139,6 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         print('Client connected @' + self.ip + ':' + str(self.port))
 
-
         while True:
             # Wait for data from the client
             try:
@@ -195,7 +187,6 @@ class ClientHandler(socketserver.BaseRequestHandler):
                             responseMessage = ProtocolErrorMessage()
                             responseMessage.set_error_message("Required field 'username' not present!")
 
-
                     elif request == "message":
 
                         if "message" in data:
@@ -218,7 +209,6 @@ class ClientHandler(socketserver.BaseRequestHandler):
                     elif request == "listUsers":
                         responseMessage = ListUsersResponseMessage()
                         responseMessage.set_users(controller.get_all_online())
-
 
                     elif request == "logout":
                         responseMessage = LogoutResponseMessage()
@@ -254,12 +244,6 @@ class ClientHandler(socketserver.BaseRequestHandler):
         controller.set_user_logged_out(self.username)
         controller.unregister_client_handler(self)
         self.connection.close()
-
-
-'''
-This will make all Request handlers being called in its own thread.
-Very important, otherwise only one client will be served at a time
-'''
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):

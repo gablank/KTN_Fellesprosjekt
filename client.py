@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-'''
-KTN-project 2013 / 2014
-'''
 import socket
 from Message import *
 from MessageWorker import MessageWorker
@@ -88,7 +85,6 @@ class Client(object):
         else:
             return False
 
-
     # Message is already decoded from JSON
     def message_received(self, data):
         #print "Message received from server: " + str(data)
@@ -103,14 +99,13 @@ class Client(object):
                     self.messages = data["messages"]
 
                     for message in self.messages:
+                        msg_id, msg, sender, timestamp = message
                         # Print the UNIX timestamp (message[3]) pretty as hh:mm:ss
-                        now_pretty_print = time.strftime("%H:%M:%S", time.localtime(int(message[3])))
-                        self.output("[" + str(message[0]) + "] " + message[2] + " @ " + now_pretty_print + ": " + message[1])
-
+                        now_pretty_print = time.strftime("%H:%M:%S", time.localtime(int(timestamp)))
+                        self.output("[" + str(msg_id) + "] " + sender + " @ " + now_pretty_print + ": " + msg)
 
                 elif data["error"] == "Invalid username!":
                     self.output("Invalid username!")
-
 
                 elif data["error"] == "Name already taken!":
                     self.output("Name already taken!")
@@ -156,7 +151,6 @@ class Client(object):
     def input(self, prompt):
         print("\r" + prompt)
         return sys.stdin.readline().strip()
-
 
 
 if __name__ == "__main__":
