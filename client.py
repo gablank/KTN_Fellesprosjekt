@@ -16,7 +16,6 @@ if sys.version_info[0] != 3:
     sys.exit(1)
 
 
-
 class Client(object):
     def __init__(self, host, port):
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -54,9 +53,6 @@ class Client(object):
 
             else:
                 self.output("Client: Invalid username!")
-
-
-        self.output("Logged in as " + self.username)
 
         while self.run:
             new_message = self.input("> ")
@@ -102,11 +98,13 @@ class Client(object):
                 if "error" not in data:
                     self.username = data["username"]
 
+                    self.output("Logged in as " + self.username)
+
                     self.messages = data["messages"]
 
                     for message in self.messages:
                         # Print the UNIX timestamp (message[3]) pretty as hh:mm:ss
-                        now_pretty_print = time.strftime("%H:%M:%S", time.localtime(message[3]))
+                        now_pretty_print = time.strftime("%H:%M:%S", time.localtime(int(message[3])))
                         self.output("[" + str(message[0]) + "] " + message[2] + " @ " + now_pretty_print + ": " + message[1])
 
 
@@ -162,6 +160,6 @@ class Client(object):
 
 
 if __name__ == "__main__":
-    client = Client('www.furic.pw', 9998)
-    #client = Client('localhost', 9999)
+    #client = Client('www.furic.pw', 9998)
+    client = Client('localhost', 9999)
     client.start()

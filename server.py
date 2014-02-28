@@ -10,13 +10,13 @@ import time            # Get current time (for displaying when a chat message wa
 import json            # decode network data
 import re              # For validation of username
 import sys
+import sqlite3
 
 
 if sys.version_info[0] != 3:
     print("You need to run this with Python 3!")
     sys.exit(1)
 
-import sqlite3
 
 '''
 The RequestHandler class for our server.
@@ -117,7 +117,6 @@ class Controller:
             self.users.remove(username)
 
 
-
 class ClientHandler(socketserver.BaseRequestHandler):
     controller = Controller()
 
@@ -131,7 +130,6 @@ class ClientHandler(socketserver.BaseRequestHandler):
         except:
             controller.unregister_client_handler(self)
             controller.set_user_logged_out(self.username)
-
 
     def handle(self):
         # Initialize username to None so we know the user isn't logged in
