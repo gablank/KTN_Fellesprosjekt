@@ -112,7 +112,7 @@ class Controller:
 
 
 
-class ClientHandler(SocketServer.BaseRequestHandler):
+class ClientHandler(socketserver.BaseRequestHandler):
     controller = Controller()
 
     def connection_to_username(self):
@@ -139,7 +139,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
         # Get the remote port number of the socket
         self.port = self.client_address[1]
 
-        print 'Client connected @' + self.ip + ':' + str(self.port)
+        print('Client connected @' + self.ip + ':' + str(self.port))
 
 
         while True:
@@ -151,7 +151,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
 
             # Check if the data exists (if it doesn't it means the client disconnected)
             if json_data:
-                print "Message received from " + str(self.username) + ": " + str(json_data)
+                print("Message received from " + str(self.username) + ": " + str(json_data))
 
                 # responseMessage will be the message to return
                 responseMessage = None
@@ -175,7 +175,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
                             # See if we can log in (fails if already used)
                             elif controller.set_user_logged_in(self.username):
                                 responseMessage.set_success(self.username, controller.get_all_messages())
-                                print "Client " + self.username + " logged in!"
+                                print("Client " + self.username + " logged in!")
 
                                 # Register this object so we get broadcast messages
                                 controller.register_client_handler(self)
@@ -244,7 +244,7 @@ class ClientHandler(SocketServer.BaseRequestHandler):
             else:
                 break
 
-        print 'Client ' + str(self.username) + ' disconnected!'
+        print('Client ' + str(self.username) + ' disconnected!')
         controller.set_user_logged_out(self.username)
         controller.unregister_client_handler(self)
         self.connection.close()
@@ -256,7 +256,7 @@ Very important, otherwise only one client will be served at a time
 '''
 
 
-class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
 if __name__ == "__main__":
@@ -275,5 +275,5 @@ if __name__ == "__main__":
     # interrupt the program with Ctrl-C
     try:
         server.serve_forever()
-    except KeyboardInterrupt, e:
+    except KeyboardInterrupt:
         server.server_close()
