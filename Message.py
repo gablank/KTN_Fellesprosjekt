@@ -137,26 +137,3 @@ class ListUsersResponseMessage(Message):
         self.message_attributes["users"] = users
         self.complete = True
 
-
-# Testing
-if __name__ == "__main__":
-    print "Testing LoginRequestMessage"
-    loginRequestMessage = LoginRequestMessage()
-
-    try:
-        loginRequestMessage.get_JSON()
-    except MessageException, e:
-        print "Guard test #1 successful"
-    else:
-        print "Guard test #1 unsuccessful"
-
-    loginRequestMessage.set_login_info("anders")
-
-    try:
-        loginRequestMessage.set_login_info("anders")
-    except MessageException, e:
-        print "Guard test #2 successful"
-    else:
-        print "Guard test #2 unsuccessful"
-
-    print "LoginRequestMessage: " + loginRequestMessage.get_JSON()
