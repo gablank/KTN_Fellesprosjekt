@@ -148,11 +148,12 @@ class Client(object):
 
     # Output this to console
     def output(self, line):
-        print("\r" + line)
+        line = "\r" + line
+        print(line, end="")
 
     # Get input
     def input(self, prompt):
-        print("\r" + prompt)
+        print("\r" + prompt, end="")
         return sys.stdin.readline().strip()
 
 
