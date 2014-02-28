@@ -69,7 +69,7 @@ class Controller:
 
         for client_handler in self.client_handlers:
             if client_handler != __except:
-                client_handler.send(json_data)
+                client_handler.send(bytes(json_data, "UTF-8"))
 
     # Returns:
     # True if username is taken
@@ -119,8 +119,9 @@ class ClientHandler(socketserver.BaseRequestHandler):
         self.connection = self.request
 
     def send(self, message):
+        message_as_bytes = bytes(message, "UTF-8")
         try:
-            self.connection.sendall(message)
+            self.connection.sendall(message_as_bytes)
         except:
             controller.unregister_client_handler(self)
             controller.set_user_logged_out(self.username)
@@ -151,11 +152,12 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
             # Check if the data exists (if it doesn't it means the client disconnected)
             if json_data:
-                print("Message received from " + str(self.username) + ": " + str(json_data))
+                json_data_as_string = json_data.decode("UTF-8")
+                print("Message received from " + str(self.username) + ": " + str(json_data_as_string))
 
                 # responseMessage will be the message to return
                 responseMessage = None
-                data = json.loads(json_data)
+                data = json.loads(json_data_as_string)
 
                 if "request" in data:
                     request = data["request"]
