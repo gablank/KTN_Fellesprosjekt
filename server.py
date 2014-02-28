@@ -229,6 +229,7 @@ Very important, otherwise only one client will be served at a time
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    daemon_threads = True
     pass
 
 if __name__ == "__main__":

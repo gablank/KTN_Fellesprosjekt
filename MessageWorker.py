@@ -26,7 +26,7 @@ class MessageWorker(Thread):
             if json_data:
                 # json_data = str(json_data)
                 json_data = json_data.decode("UTF-8")
-                print("Received data from server: " + json_data)
+                #print("Received data from server: " + json_data)
 
                 data = json.loads(json_data)
                 self.send_data(data)

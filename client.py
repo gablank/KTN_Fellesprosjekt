@@ -103,7 +103,7 @@ class Client(object):
                     self.username = data["username"]
 
                     for message in data["messages"]:
-                        self.output(message)
+                        self.output(message, True)
 
 
                 elif data["error"] == "Invalid username!":
@@ -118,7 +118,7 @@ class Client(object):
 
             elif data["response"] == "message":
                 if not "error" in data:
-                    self.output(data["message"])
+                    self.output(data["message"], True)
 
                 # Error: not logged in
                 else:
@@ -147,13 +147,15 @@ class Client(object):
         self.connection.close()
 
     # Output this to console
-    def output(self, line):
-        line = "\r" + line
-        print(line, end="")
+    def output(self, line, newline=False):
+        if newline:
+            print("\r" + line)
+        else:
+            print("\r" + line, end="")
 
     # Get input
     def input(self, prompt):
-        print("\r" + prompt, end="")
+        print("\r" + prompt)
         return sys.stdin.readline().strip()
 
 
