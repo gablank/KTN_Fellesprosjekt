@@ -10,6 +10,13 @@ import datetime        # Get current date (for displaying when a chat message wa
 import time            # Get current time (for displaying when a chat message was sent)
 import json            # decode network data
 import re              # For validation of username
+import sys
+
+
+if sys.version_info[0] != 3:
+    print("You need to run this with Python 3!")
+    sys.exit(1)
+
 
 '''
 The RequestHandler class for our server.
