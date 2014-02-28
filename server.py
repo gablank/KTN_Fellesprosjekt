@@ -4,12 +4,19 @@ KTN-project 2013 / 2014
 Very simple server implementation that should serve as a basis
 for implementing the chat server
 '''
-import SocketServer
+import socketserver
 from Message import *  # All Message types
 import datetime        # Get current date (for displaying when a chat message was sent)
 import time            # Get current time (for displaying when a chat message was sent)
 import json            # decode network data
 import re              # For validation of username
+import sys
+
+
+if sys.version_info[0] != 3:
+    print("You need to run this with Python 3!")
+    sys.exit(1)
+
 import sqlite3
 
 '''

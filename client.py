@@ -9,6 +9,14 @@ import threading
 import re
 import sys
 import time
+from _io import StringIO
+import sys
+
+
+if sys.version_info[0] != 3:
+    print("You need to run this with Python 3!")
+    sys.exit(1)
+
 
 
 class Client(object):
@@ -16,7 +24,7 @@ class Client(object):
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.connection.connect((host, port))
-
+ 
         self.login_response_event = threading.Event()
 
         # Start the message worker (which listens on the connection and notifies us if it has received a message)
