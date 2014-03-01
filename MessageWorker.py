@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-from threading import Thread
-import json
 import sys
-
-
 if sys.version_info[0] != 3:
     print("You need to run this with Python 3!")
     sys.exit(1)
+
+from threading import Thread
+import json
 
 
 class MessageWorker(Thread):
