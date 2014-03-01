@@ -233,7 +233,7 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 if __name__ == "__main__":
     HOST = ''
-    PORT = 9998
+    PORT = 9999
 
     controller = Controller()
 
