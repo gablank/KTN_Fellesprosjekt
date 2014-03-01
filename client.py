@@ -115,7 +115,10 @@ class Client(object):
 
             elif data["response"] == "message":
                 if not "error" in data:
-                    self.output(data["message"])
+                    msg_id, msg, sender, timestamp = data["message"]
+                    # Print the UNIX timestamp (message[3]) pretty as hh:mm:ss
+                    now_pretty_print = time.strftime("%H:%M:%S", time.localtime(int(timestamp)))
+                    self.output("[" + str(msg_id) + "] " + sender + " @ " + now_pretty_print + ": " + msg)
 
                 # Error: not logged in
                 else:

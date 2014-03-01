@@ -113,6 +113,13 @@ class Controller:
 class ClientHandler(socketserver.BaseRequestHandler):
     controller = Controller()
 
+    def __init__(self, request, client_address, server):
+        self.recv_buffer = ""
+
+        # This IMMEDIATELY calls the handle() function
+        super().__init__(request, client_address, server)
+
+
     def connection_to_username(self):
         self.connection = self.request
 
@@ -124,6 +131,61 @@ class ClientHandler(socketserver.BaseRequestHandler):
             controller.unregister_client_handler(self)
             controller.set_user_logged_out(self.username)
 
+    # Receive data until we have one or more COMPLETE JSON objects to deliver
+    # Returns: Exactly *ONE* JSON object
+    # or False if connection was closed
+    def receive_message(self):
+        num_brackets = 0  # "Net worth" of brackets, that is: Number of { minus number of }
+        buffer_pos = 0    # How far in the buffer we've searched for an object
+
+        # Essentially: while we haven't found a complete object
+        while True:
+            # Look for object
+            # NOTE: We're doing this before we receive for a reason!
+            # This is because we might have received more than one object a previous iteration,
+            # and we want to serve those at once
+            # If we didn't do this we would have to WAIT for self.connection.recv() to return, meaning that we
+            # actually have to receive more data to provide our server with data we already have
+            escape_char = False
+            inside_quotes = False
+            for i in range(buffer_pos, len(self.recv_buffer)):
+                buffer_pos = i+1
+                if escape_char:
+                    escape_char = False
+                    continue
+
+                if not inside_quotes:
+                    if self.recv_buffer[i] == '{':
+                        num_brackets += 1
+                    elif self.recv_buffer[i] == '}':
+                        num_brackets -= 1
+
+                # The next character doesn't mean what it usually means
+                if self.recv_buffer[i] == '\\':
+                    escape_char = True
+
+                if self.recv_buffer[i] == '"':
+                    inside_quotes = not inside_quotes
+
+                if num_brackets == 0:
+                    # Set object_json equal to the first i chars of self.recv_buffer
+                    object_json = self.recv_buffer[:i+1]
+                    self.recv_buffer = self.recv_buffer[i+1:]
+
+                    return object_json
+
+            # We don't have an object to serve; wait for more data
+            received_bytes = self.connection.recv(1024)
+
+            # Connection was closed
+            if len(received_bytes) == 0:
+                return False
+
+            received_as_string = received_bytes.decode("utf-8")  # Decode received bytes as utf-8
+            #print("Received: " + received_as_string)
+            self.recv_buffer += received_as_string
+
+    # Socket is closed when we return from this function
     def handle(self):
         # Initialize username to None so we know the user isn't logged in
         self.username = None
@@ -140,20 +202,20 @@ class ClientHandler(socketserver.BaseRequestHandler):
         print('Client connected @' + self.ip + ':' + str(self.port))
 
         while True:
-            # Wait for data from the client
-            try:
-                json_data = self.connection.recv(1024).strip()
-            except:
-                break
+            # Blocks until we have a complete JSON object
+            json_data = self.receive_message()
 
             # Check if the data exists (if it doesn't it means the client disconnected)
             if json_data:
-                json_data_as_string = json_data.decode("UTF-8")
-                print("Message received from " + str(self.username) + ": " + str(json_data_as_string))
+                print("Message received from " + str(self.username) + ": " + str(json_data))
 
                 # responseMessage will be the message to return
                 responseMessage = None
-                data = json.loads(json_data_as_string)
+                try:
+                    data = json.loads(json_data)
+                except ValueError:
+                    print("Cannot decode JSON: " + json_data)
+                    continue
 
                 if "request" in data:
                     request = data["request"]
@@ -237,6 +299,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
                     json_data = responseMessage.get_JSON()
                     self.send(json_data)
 
+            # Connection was closed
             else:
                 break
 
