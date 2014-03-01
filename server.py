@@ -314,7 +314,7 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 if __name__ == "__main__":
     HOST = ''
     #HOST = 'localhost'
-    PORT = 9999
+    PORT = 9998
 
     controller = Controller()
 

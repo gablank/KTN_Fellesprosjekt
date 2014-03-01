@@ -156,6 +156,6 @@ class Client(object):
 
 
 if __name__ == "__main__":
-    #client = Client('www.furic.pw', 9998)
-    client = Client('localhost', 9999)
+    client = Client('www.furic.pw', 9998)
+    #client = Client('localhost', 9999)
     client.start()
