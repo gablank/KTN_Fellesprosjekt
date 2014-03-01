@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-import json  # Encode as JSON (only used in Message.get_JSON)
 import sys   # Exit if not Python 3
-
-
 if sys.version_info[0] != 3:
     print("You need to run this with Python 3!")
     sys.exit(1)
+
+import json  # Encode as JSON (only used in Message.get_JSON)
 
 
 class MessageException(Exception):

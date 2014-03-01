@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
+import sys             # Exit if not Python 3
+if sys.version_info[0] != 3:
+    print("You need to run this with Python 3!")
+    sys.exit(1)
+
 import socketserver
 from Message import *  # All Message types
 import time            # Get current time (for displaying when a chat message was sent)
 import json            # decode network data
 import re              # For validation of username
-import sys             # Exit if not Python 3
 import sqlite3         # Database connection
-
-
-if sys.version_info[0] != 3:
-    print("You need to run this with Python 3!")
-    sys.exit(1)
 
 
 # The RequestHandler class for our server.

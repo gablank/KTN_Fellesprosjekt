@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
+import sys
+if sys.version_info[0] != 3:
+    print("You need to run this with Python 3!")
+    sys.exit(1)
+
 import socket
 from Message import *
 from MessageWorker import MessageWorker
 import threading
 import re
 import time
-import sys
-
-
-if sys.version_info[0] != 3:
-    print("You need to run this with Python 3!")
-    sys.exit(1)
 
 
 class Client(object):
