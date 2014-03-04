@@ -79,9 +79,7 @@ class Controller:
     # True if username is taken
     # False if available
     def get_user_logged_in(self, username):
-        self.lock.acquire()
         res = self.users.count(username) == 1
-        self.lock.release()
 
         return res
 
