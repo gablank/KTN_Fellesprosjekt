@@ -46,6 +46,7 @@ class Client(tk.Frame):
         menu_bar = tk.Menu(self)
         # tearoff is some weird shit: it allows you to drag the file menu off of the main menu.
         file_menu = tk.Menu(menu_bar, tearoff=0)
+        file_menu.add_command(label="Login", command=self.login)
         file_menu.add_command(label="Logout", command=self.logout)
 
 
@@ -137,7 +138,6 @@ class Client(tk.Frame):
         username_entry.pack()
 
         self.login_window.attributes("-topmost", True)  # bring to front
-        self.login_window.focus_set()
 
     def try_login(self, event):
         self.login_response_event.clear()
@@ -207,7 +207,7 @@ class Client(tk.Frame):
 
     # Message is already decoded from JSON
     def message_received(self, data):
-        print("Message received from server: " + str(data))
+        #print("Message received from server: " + str(data))
         if "response" in data:
             if data["response"] == "login":
                 # Success
@@ -281,6 +281,7 @@ class Client(tk.Frame):
             self.chat.config(state=tk.NORMAL)  # Need to set state to NORMAL to be able to modify the contents
             self.chat.insert(tk.END, line + "\n")  # New line has to be added
             self.chat.config(state=tk.DISABLED)
+            self.chat.see(tk.END)
         else:
             print("\r" + line)
 
