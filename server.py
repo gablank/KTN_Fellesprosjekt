@@ -26,6 +26,8 @@ class Controller:
         self.users = []
         self.client_handlers = []
 
+        self.reserved_usernames = ["SERVER"]
+
         self.lock = threading.Lock()
 
         # Connect to database called "chat.db" - create it if it doesn't exist
@@ -86,10 +88,11 @@ class Controller:
         return res
 
     def set_user_logged_in(self, username):
-        if not self.get_user_logged_in(username):
+        if not self.get_user_logged_in(username) and username not in self.reserved_usernames:
             self.lock.acquire()
             self.users.append(username)
             self.lock.release()
+            self.notify_message(username + " has logged in!", "SERVER")
             return True
         return False
 
@@ -130,7 +133,9 @@ class Controller:
         self.lock.acquire()
         if username in self.users:
             self.users.remove(username)
-        self.lock.release()
+            self.lock.release()
+            self.notify_message(username + " has logged out!", "SERVER")
+
 
 
 class ClientHandler(socketserver.BaseRequestHandler):

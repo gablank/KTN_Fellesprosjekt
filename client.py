@@ -280,6 +280,7 @@ class Client(tk.Frame):
 
 
 
+
             elif data["response"] == "message":
                 if not "error" in data:
                     msg_id, msg, sender, timestamp = data["message"]
