@@ -50,7 +50,7 @@ class Controller:
     def load_chat_messages(self):
         # Fetch all messages ordered by oldest first
         # TODO: Fetching WILL get slower as the table grows
-        query = "SELECT * FROM chat_messages ORDER BY timestamp ASC;"
+        query = "SELECT * FROM chat_messages ORDER BY timestamp ASC LIMIT 100;"
 
         # Row is a tuple: (id, message, sender, timestamp)
         for row in self.db_cursor.execute(query):
@@ -348,9 +348,18 @@ if __name__ == "__main__":
     server = ThreadedTCPServer((HOST, PORT), ClientHandler)
     server.daemon_threads = True
 
-    # Activate the server; this will keep running until you
-    # interrupt the program with Ctrl-C
+    server_thread = threading.Thread(target=server.serve_forever)
+    server_thread.start()
+
     try:
-        server.serve_forever()
+        while True:
+            print("I am server: ", end="")
+            _input = sys.stdin.readline().strip()
+
+            if _input == "stop":
+                server.shutdown()
+
+    # So we can shutdown with ctrl+c as well
     except KeyboardInterrupt:
-        server.server_close()
+        server.shutdown()
+
