@@ -10,10 +10,20 @@ from MessageWorker import MessageWorker
 import threading
 import re
 import time
+import tkinter as tk
 
 
-class Client(object):
-    def __init__(self, host, port):
+class Client(tk.Frame):
+    def __init__(self, host, port, master):
+        self.gui = master is not None
+
+        if self.gui:
+            tk.Frame.__init__(self, master)
+            master.title("KTN Project client")
+            self.config()
+            self.pack()
+            self.createWidgets()
+
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.connection.connect((host, port))
@@ -27,11 +37,48 @@ class Client(object):
         # Keep a list of messages client side too, for easier terminal formatting and deletion of messages
         self.messages = []
 
+        self.username = None
+
         self.run = True
 
 
+    def createWidgets(self):
+        menu_bar = tk.Menu(self)
+        # tearoff is some weird shit: it allows you to drag the file menu off of the main menu.
+        file_menu = tk.Menu(menu_bar, tearoff=0)
+        file_menu.add_command(label="Logout", command=self.logout)
+
+
+        help_menu = tk.Menu(menu_bar, tearoff=0)
+        help_menu.add_command(label="About", command=self.about)
+
+        menu_bar.add_cascade(label="File", menu=file_menu)
+        menu_bar.add_cascade(label="Help", menu=help_menu)
+        self.master.config(menu=menu_bar)
+
+        # Contains chat text and scrollbar
+        self.chatContainer = tk.Frame(self)
+
+        self.chat = tk.Text(self.chatContainer, {"state": tk.DISABLED})
+        self.chat.pack(side=tk.LEFT)
+
+        scrollbar = tk.Scrollbar(self.chatContainer)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        scrollbar.config(command=self.chat.yview)
+        self.chat.config(yscrollcommand=scrollbar.set)
+
+        self.chatContainer.pack(side=tk.TOP)
+
+
+        # Input field
+        self.input_field = tk.Entry(self, width="60")
+        self.input_field.bind("<Return>", self.on_enter_press)
+        self.input_field.pack(side=tk.BOTTOM)
+
+        self.login()
+
     # Main loop
-    def start(self):
+    '''def start(self):
         self.username = None
 
         # Log in
@@ -43,7 +90,7 @@ class Client(object):
             if self.valid_username(new_username):
                 loginRequestMessage = LoginRequestMessage()
                 loginRequestMessage.set_login_info(new_username)
-                self.send(loginRequestMessage)
+                self.send_data(loginRequestMessage)
 
                 self.login_response_event.wait()  # Blocks until message_received receives a LoginResponseMessage
 
@@ -61,22 +108,96 @@ class Client(object):
                 self.output(self.username + " " + now_string + ": " + new_message)
                 chatRequestMessage = ChatRequestMessage()
                 chatRequestMessage.set_chat_message(new_message)
-                self.send(chatRequestMessage)
+                self.send_data(chatRequestMessage)
 
             else:
                 if cmd == "logout":
                     logoutRequestMessage = LogoutRequestMessage()
-                    self.send(logoutRequestMessage)
+                    self.send_data(logoutRequestMessage)
                     self.run = False
 
                 elif cmd == "listusers":
                     listUsersRequestMessage = ListUsersRequestMessage()
-                    self.send(listUsersRequestMessage)
+                    self.send_data(listUsersRequestMessage)
 
                 else:
                     self.output("Unknown command: /" + cmd)
 
-        self.output("Logged out, good bye!")
+        self.output("Logged out, good bye!")'''
+
+    def login(self):
+        self.login_window = tk.Toplevel()
+        self.login_window.title("Log in")
+
+        username_label = tk.Label(self.login_window, text="You need to login!\nUsername: ")
+        username_label.pack()
+
+        username_entry = tk.Entry(self.login_window)
+        username_entry.bind("<Return>", self.try_login)
+        username_entry.pack()
+
+        self.login_window.attributes("-topmost", True)  # bring to front
+        self.login_window.focus_set()
+
+    def try_login(self, event):
+        self.login_response_event.clear()
+
+        new_username = event.widget.get()
+        loginRequestMessage = LoginRequestMessage()
+        loginRequestMessage.set_login_info(new_username)
+        self.send_data(loginRequestMessage)
+
+        self.login_response_event.wait()  # Blocks until message_received receives a LoginResponseMessage
+
+        if self.username:
+            self.login_window.destroy()
+
+    def on_enter_press(self, event):
+        text = self.input_field.get()
+        self.input_field.delete(0, tk.END)  # Empty the Entry field
+
+        self.handle_input(text)
+
+    def handle_input(self, input_text):
+        # Parse as cmd
+        cmd = self.get_cmd(input_text)
+
+        if not cmd:
+            self.send_message(input_text)
+
+        else:
+            if cmd == "logout":
+                self.logout()
+
+            elif cmd == "listusers":
+                listUsersRequestMessage = ListUsersRequestMessage()
+                self.send_data(listUsersRequestMessage)
+
+            else:
+                self.output("Unknown command: /" + cmd)
+
+    def about(self):
+        about_window = tk.Toplevel()
+        about_window.title("About this application")
+        about_text = tk.Message(about_window, text="This is the client side of the KTN project for group 30.")
+        about_text.pack()
+
+        close_btn = tk.Button(about_window, text="OK", command=about_window.destroy)
+        close_btn.pack()
+
+    def logout(self):
+        logoutRequestMessage = LogoutRequestMessage()
+        self.send_data(logoutRequestMessage)
+        self.run = False
+
+        if self.gui:
+            root.destroy()
+
+    def send_message(self, message):
+        chatRequestMessage = ChatRequestMessage()
+        chatRequestMessage.set_chat_message(message)
+        self.send_data(chatRequestMessage)
+
 
     def get_cmd(self, text):
         if len(text) > 1 and text[0] == '/':
@@ -86,12 +207,16 @@ class Client(object):
 
     # Message is already decoded from JSON
     def message_received(self, data):
-        #print "Message received from server: " + str(data)
+        print("Message received from server: " + str(data))
         if "response" in data:
             if data["response"] == "login":
                 # Success
                 if "error" not in data:
                     self.username = data["username"]
+
+                    # Notify main thread
+                    # Note: This has to be before the output calls (at least when using a GUI)
+                    self.login_response_event.set()
 
                     self.output("Logged in as " + self.username)
 
@@ -104,13 +229,18 @@ class Client(object):
                         self.output("[" + str(msg_id) + "] " + sender + " @ " + now_pretty_print + ": " + msg)
 
                 elif data["error"] == "Invalid username!":
+                    # Notify main thread
+                    # Note: This has to be before the output calls (at least when using a GUI)
+                    self.login_response_event.set()
                     self.output("Invalid username!")
 
                 elif data["error"] == "Name already taken!":
+                    # Notify main thread
+                    # Note: This has to be before the output calls (at least when using a GUI)
+                    self.login_response_event.set()
                     self.output("Name already taken!")
 
-                # Notify main thread
-                self.login_response_event.set()
+
 
             elif data["response"] == "message":
                 if not "error" in data:
@@ -139,7 +269,7 @@ class Client(object):
         self.message_worker.join()  # Wait for listener to exit
 
     # data should be a Message object
-    def send(self, data):
+    def send_data(self, data):
         self.connection.sendall(data.get_JSON().encode("UTF-8"))
 
     def force_disconnect(self):
@@ -147,7 +277,12 @@ class Client(object):
 
     # Output this to console
     def output(self, line):
-        print("\r" + line)
+        if self.gui:
+            self.chat.config(state=tk.NORMAL)  # Need to set state to NORMAL to be able to modify the contents
+            self.chat.insert(tk.END, line + "\n")  # New line has to be added
+            self.chat.config(state=tk.DISABLED)
+        else:
+            print("\r" + line)
 
     # Get input
     def input(self, prompt):
@@ -156,6 +291,8 @@ class Client(object):
 
 
 if __name__ == "__main__":
-    client = Client('www.furic.pw', 9998)
-    #client = Client('localhost', 9999)
-    client.start()
+    root = tk.Tk()
+    client = Client('www.furic.pw', 9998, root)
+    #client = Client('localhost', 9999, root)
+
+    client.mainloop()
