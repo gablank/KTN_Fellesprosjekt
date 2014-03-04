@@ -22,7 +22,7 @@ class MessageWorker(Thread):
     # or False if connection was closed
     def receive_message(self):
         num_brackets = 0  # "Net worth" of brackets, that is: Number of { minus number of }
-        buffer_pos = 0    # How far in the buffer we've searched for an object
+        buffer_pos = 0  # How far in the buffer we've searched for an object
         escape_char = False
         inside_quotes = False
 
@@ -35,7 +35,7 @@ class MessageWorker(Thread):
             # If we didn't do this we would have to WAIT for self.connection.recv() to return, meaning that we
             # actually have to receive more data to provide our server with data we already have
             for i in range(buffer_pos, len(self.recv_buffer)):
-                buffer_pos = i+1
+                buffer_pos = i + 1
                 if escape_char:
                     escape_char = False
                     continue
@@ -55,8 +55,8 @@ class MessageWorker(Thread):
 
                 if num_brackets == 0:
                     # Set object_json equal to the first i chars of self.recv_buffer
-                    object_json = self.recv_buffer[:i+1]
-                    self.recv_buffer = self.recv_buffer[i+1:]
+                    object_json = self.recv_buffer[:i + 1]
+                    self.recv_buffer = self.recv_buffer[i + 1:]
                     return object_json
 
             # We don't have an object to serve; wait for more data
@@ -64,10 +64,11 @@ class MessageWorker(Thread):
 
             # Connection was closed
             if len(received_bytes) == 0:
+                self.client.output("Connection closed! MessageWorker is terminating.")
                 return False
 
             received_as_string = received_bytes.decode("utf-8")  # Decode received bytes as utf-8
-            #print("Received: " + received_as_string)
+            # print("Received: " + received_as_string)
             self.recv_buffer += received_as_string
 
     def run(self):
@@ -77,7 +78,7 @@ class MessageWorker(Thread):
             json_data = self.receive_message()
             # Decode and send data to client
             if json_data:
-                #print("Received data from server: " + str(json_data))
+                # print("Received data from server: " + str(json_data))
                 json_data = json.loads(json_data)
                 self.send_data(json_data)
 
