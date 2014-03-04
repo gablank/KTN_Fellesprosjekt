@@ -10,6 +10,7 @@ import time            # Get current time (for displaying when a chat message wa
 import json            # decode network data
 import re              # For validation of username
 import sqlite3         # Database connection
+import threading
 
 
 # The RequestHandler class for our server.
@@ -24,6 +25,8 @@ class Controller:
         self.messages = []
         self.users = []
         self.client_handlers = []
+
+        self.lock = threading.Lock()
 
         # Connect to database called "chat.db" - create it if it doesn't exist
         # check_same_thread=False enables access to the object from different threads
@@ -54,11 +57,15 @@ class Controller:
             self.messages.append(row)
 
     def register_client_handler(self, client_handler):
+        self.lock.acquire()
         self.client_handlers.append(client_handler)
+        self.lock.release()
 
     def unregister_client_handler(self, client_handler):
+        self.lock.acquire()
         if client_handler in self.client_handlers:
             self.client_handlers.remove(client_handler)
+        self.lock.release()
 
     def broadcast(self, message):
         chatMessageResponse = ChatResponseMessage()
@@ -72,19 +79,35 @@ class Controller:
     # True if username is taken
     # False if available
     def get_user_logged_in(self, username):
-        return self.users.count(username) == 1
+        self.lock.acquire()
+        res = self.users.count(username) == 1
+        self.lock.release()
+
+        return res
 
     def set_user_logged_in(self, username):
+        self.lock.acquire()
+        res = False
         if not self.get_user_logged_in(username):
             self.users.append(username)
-            return True
-        return False
+            res = True
+        self.lock.release()
+
+        return res
 
     def get_all_online(self):
-        return self.users
+        self.lock.acquire()
+        users = self.users
+        self.lock.release()
+
+        return users
 
     def get_all_messages(self):
-        return self.messages
+        self.lock.acquire()
+        res = self.messages
+        self.lock.release()
+
+        return res
 
     def valid_username(self, username):
         match_obj = re.search(u'[A-zæøåÆØÅ_0-9]+', username)
@@ -99,13 +122,17 @@ class Controller:
 
         message_id = self.db_cursor.lastrowid
         message_row = (message_id, message, sender, now_as_int)
-        self.messages.append(message_row)
 
+        self.lock.acquire()
+        self.messages.append(message_row)
         self.broadcast(message_row)
+        self.lock.release()
 
     def set_user_logged_out(self, username):
+        self.lock.acquire()
         if username in self.users:
             self.users.remove(username)
+        self.lock.release()
 
 
 class ClientHandler(socketserver.BaseRequestHandler):
