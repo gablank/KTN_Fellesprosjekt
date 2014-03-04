@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-import sys             # Exit if not Python 3
+import sys  # Exit if not Python 3
 if sys.version_info[0] != 3:
     print("You need to run this with Python 3!")
     sys.exit(1)
 
 import socketserver
 from Message import *  # All Message types
-import time            # Get current time (for displaying when a chat message was sent)
-import json            # decode network data
-import re              # For validation of username
-import sqlite3         # Database connection
+import time  # Get current time (for displaying when a chat message was sent)
+import json  # decode network data
+import re  # For validation of username
+import sqlite3  # Database connection
 import threading
 
 
@@ -44,7 +44,7 @@ class Controller:
         query = "CREATE TABLE IF NOT EXISTS chat_messages"
         query += " (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT, sender TEXT, timestamp INT);"
         self.db_cursor.execute(query)  # Run the query
-        self.db_con.commit()           # Save changes from memory to disk
+        self.db_con.commit()  # Save changes from memory to disk
 
         # Load chat messages from database
         self.load_chat_messages()
@@ -158,15 +158,15 @@ class ClientHandler(socketserver.BaseRequestHandler):
         try:
             self.connection.sendall(message_as_bytes)
         except:
-            controller.unregister_client_handler(self)
-            controller.set_user_logged_out(self.username)
+            self.controller.unregister_client_handler(self)
+            self.controller.set_user_logged_out(self.username)
 
     # Receive data until we have one or more COMPLETE JSON objects to deliver
     # Returns: Exactly *ONE* JSON object
     # or False if connection was closed
     def receive_message(self):
         num_brackets = 0  # "Net worth" of brackets, that is: Number of { minus number of }
-        buffer_pos = 0    # How far in the buffer we've searched for an object
+        buffer_pos = 0  # How far in the buffer we've searched for an object
         escape_char = False
         inside_quotes = False
 
@@ -179,7 +179,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             # If we didn't do this we would have to WAIT for self.connection.recv() to return, meaning that we
             # actually have to receive more data to provide our server with data we already have
             for i in range(buffer_pos, len(self.recv_buffer)):
-                buffer_pos = i+1
+                buffer_pos = i + 1
                 if escape_char:
                     escape_char = False
                     continue
@@ -199,8 +199,8 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
                 if num_brackets == 0:
                     # Set object_json equal to the first i chars of self.recv_buffer
-                    object_json = self.recv_buffer[:i+1]
-                    self.recv_buffer = self.recv_buffer[i+1:]
+                    object_json = self.recv_buffer[:i + 1]
+                    self.recv_buffer = self.recv_buffer[i + 1:]
 
                     return object_json
 
@@ -212,7 +212,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
                 return False
 
             received_as_string = received_bytes.decode("utf-8")  # Decode received bytes as utf-8
-            #print("Received: " + received_as_string)
+            # print("Received: " + received_as_string)
             self.recv_buffer += received_as_string
 
     # Socket is closed when we return from this function
@@ -258,17 +258,17 @@ class ClientHandler(socketserver.BaseRequestHandler):
                             responseMessage = LoginResponseMessage()
 
                             # Check for invalid username
-                            if not controller.valid_username(self.username):
+                            if not self.controller.valid_username(self.username):
                                 responseMessage.set_invalid_username(self.username)
                                 self.username = None
 
                             # See if we can log in (fails if already used)
-                            elif controller.set_user_logged_in(self.username):
-                                responseMessage.set_success(self.username, controller.get_all_messages())
+                            elif self.controller.set_user_logged_in(self.username):
+                                responseMessage.set_success(self.username, self.controller.get_all_messages())
                                 print("Client " + self.username + " logged in!")
 
                                 # Register this object so we get broadcast messages
-                                controller.register_client_handler(self)
+                                self.controller.register_client_handler(self)
 
                             # Username taken
                             else:
@@ -287,29 +287,29 @@ class ClientHandler(socketserver.BaseRequestHandler):
                             responseMessage = ChatResponseMessage()
 
                             # Not logged in, don't broadcast
-                            if not controller.get_user_logged_in(self.username):
+                            if not self.controller.get_user_logged_in(self.username):
                                 responseMessage.set_not_logged_in()
 
                             # Everything is fine, send message back to sender and then broadcast to everyone else
                             else:
-                                #responseMessage.set_success(message)
+                                # responseMessage.set_success(message)
                                 responseMessage = None
 
                                 # This also broadcasts to everyone except the sender
-                                controller.notify_message(message, self.username)
+                                self.controller.notify_message(message, self.username)
 
                     elif request == "listUsers":
                         responseMessage = ListUsersResponseMessage()
-                        responseMessage.set_users(controller.get_all_online())
+                        responseMessage.set_users(self.controller.get_all_online())
 
                     elif request == "logout":
                         responseMessage = LogoutResponseMessage()
 
                         # All is fine, log user out and unregister ourselves so we don't receive broadcasts.
-                        if controller.get_user_logged_in(self.username):
+                        if self.controller.get_user_logged_in(self.username):
                             responseMessage.set_success(self.username)
-                            controller.set_user_logged_out(self.username)
-                            controller.unregister_client_handler(self)
+                            self.controller.set_user_logged_out(self.username)
+                            self.controller.unregister_client_handler(self)
                             self.username = None
 
                         # Can't log out: you need to log in first! :D
@@ -334,8 +334,8 @@ class ClientHandler(socketserver.BaseRequestHandler):
                 break
 
         print('Client ' + str(self.username) + ' disconnected!')
-        controller.set_user_logged_out(self.username)
-        controller.unregister_client_handler(self)
+        self.controller.set_user_logged_out(self.username)
+        self.controller.unregister_client_handler(self)
         self.connection.close()
 
 
@@ -364,12 +364,8 @@ class ServerStopper(threading.Thread):
 
 if __name__ == "__main__":
     HOST = ''
-    #HOST = 'localhost'
+    # HOST = 'localhost'
     PORT = 9998
-
-    controller = Controller()
-
-    ClientHandler.persist = controller
 
     # Create the server, binding to localhost on port 9999
     server = ThreadedTCPServer((HOST, PORT), ClientHandler)

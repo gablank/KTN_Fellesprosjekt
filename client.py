@@ -43,7 +43,7 @@ class Client(tk.Frame):
         self.messages = []
 
 
-        self.run = True
+        # self.run = True
 
 
     def createWidgets(self):
@@ -85,9 +85,8 @@ class Client(tk.Frame):
         # Login window
         self.login_window = tk.Toplevel()
         self.login_window.title("Log in")
-        self.login_window.protocol("WM_DELETE_WINDOW", self.hide_login_window)
 
-        self.output(str(self.login_window.attributes()))
+        self.login_window.protocol("WM_DELETE_WINDOW", self.hide_login_window)
 
         username_label = tk.Label(self.login_window, text="You need to login!\nUsername: ")
         username_label.pack()
@@ -97,6 +96,22 @@ class Client(tk.Frame):
         username_entry.pack()
 
         self.login_window.attributes("-topmost", True)  # bring to front
+
+
+        # About window
+        self.about_window = tk.Toplevel()
+        self.about_window.title("About this application")
+
+        self.about_window.protocol("WM_DELETE_WINDOW", self.hide_login_window)
+        self.about_window.withdraw()
+
+        about_text = tk.Message(self.about_window, text="This is the client side of the KTN project for group 30.")
+        about_text.pack()
+
+        self.login_window.protocol("WM_DELETE_WINDOW", self.hide_login_window)
+
+        close_btn = tk.Button(self.about_window, text="OK", command=self.about_window.destroy)
+        close_btn.pack()
 
 
 
@@ -151,6 +166,9 @@ class Client(tk.Frame):
     def hide_login_window(self):
         self.login_window.withdraw()
 
+    def hide_about_window(self):
+        self.about_window_withdraw()
+
 
     def login(self):
         if self.username:
@@ -201,20 +219,14 @@ class Client(tk.Frame):
                 self.output("Unknown command: /" + cmd)
 
     def about(self):
-        about_window = tk.Toplevel()
-        about_window.title("About this application")
-        about_text = tk.Message(about_window, text="This is the client side of the KTN project for group 30.")
-        about_text.pack()
-
-        close_btn = tk.Button(about_window, text="OK", command=about_window.destroy)
-        close_btn.pack()
+        self.about_window.deiconify()
 
     def logout(self):
         if self.username:
             logoutRequestMessage = LogoutRequestMessage()
             self.send_data(logoutRequestMessage)
 
-        self.run = False
+        # self.run = False
 
         if self.gui:
             root.destroy()
@@ -265,6 +277,7 @@ class Client(tk.Frame):
                     # Note: This has to be before the output calls (at least when using a GUI)
                     self.login_response_event.set()
                     self.output("Name already taken!")
+
 
 
 
