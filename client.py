@@ -18,7 +18,6 @@ class Client(tk.Frame):
         self.gui = master is not None
 
         self.username = None
-        self.login_window = None
 
 
         if self.gui:
@@ -27,6 +26,7 @@ class Client(tk.Frame):
             self.config()
             self.pack()
             self.createWidgets()
+            self.login()
 
 
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -61,6 +61,7 @@ class Client(tk.Frame):
         menu_bar.add_cascade(label="Help", menu=help_menu)
         self.master.config(menu=menu_bar)
 
+
         # Contains chat text and scrollbar
         self.chatContainer = tk.Frame(self)
 
@@ -80,7 +81,24 @@ class Client(tk.Frame):
         self.input_field.bind("<Return>", self.on_enter_press)
         self.input_field.pack(side=tk.BOTTOM)
 
-        self.login()
+
+        # Login window
+        self.login_window = tk.Toplevel()
+        self.login_window.title("Log in")
+        self.login_window.protocol("WM_DELETE_WINDOW", self.hide_login_window)
+
+        self.output(str(self.login_window.attributes()))
+
+        username_label = tk.Label(self.login_window, text="You need to login!\nUsername: ")
+        username_label.pack()
+
+        username_entry = tk.Entry(self.login_window)
+        username_entry.bind("<Return>", self.try_login)
+        username_entry.pack()
+
+        self.login_window.attributes("-topmost", True)  # bring to front
+
+
 
     # Main loop
     '''def start(self):
@@ -130,34 +148,20 @@ class Client(tk.Frame):
 
         self.output("Logged out, good bye!")'''
 
-    # def destroy_window(self, window):
-        # window.destroy()
-        # window = None
-        # pass
+    def hide_login_window(self):
+        self.login_window.withdraw()
+
 
     def login(self):
         if self.username:
             self.output("You are already logged in!")
             return
 
-        # if self.login_window:
-            # self.login_window.focus()
-            # return
+        self.login_window.deiconify()
+        # self.login_window.attributes("-topmost", True)  # bring to front
+        # self.login_window.focus()
 
-        self.login_window = tk.Toplevel()
-        self.login_window.title("Log in")
-        # self.login_window.protocol("WM_DELETE_WINDOW", self.destroy_window(self.login_window))
 
-        self.output(str(self.login_window.attributes()))
-
-        username_label = tk.Label(self.login_window, text="You need to login!\nUsername: ")
-        username_label.pack()
-
-        username_entry = tk.Entry(self.login_window)
-        username_entry.bind("<Return>", self.try_login)
-        username_entry.pack()
-
-        self.login_window.attributes("-topmost", True)  # bring to front
 
     def try_login(self, event):
         self.login_response_event.clear()
@@ -170,7 +174,7 @@ class Client(tk.Frame):
         self.login_response_event.wait()  # Blocks until message_received receives a LoginResponseMessage
 
         if self.username:
-            self.login_window.destroy()
+            self.hide_login_window()
 
     def on_enter_press(self, event):
         text = self.input_field.get()
