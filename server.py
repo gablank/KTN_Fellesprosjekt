@@ -90,7 +90,7 @@ class Controller:
     def set_user_logged_in(self, username):
         if not self.get_user_logged_in(username)\
             and username not in self.reserved_usernames\
-            and len(username) >= 20:
+            and len(username) <= 20:
             self.lock.acquire()
             self.users.append(username)
             self.lock.release()
@@ -349,9 +349,14 @@ class ServerStopper(threading.Thread):
 
     def run(self):
         while True:
+            print("Waiting for input")
             _input = sys.stdin.readline().strip()
 
+            print("Got input: " + _input)
+
+
             if _input == "stop":
+                print("Shutting down server")
                 server.shutdown()
                 break
 
