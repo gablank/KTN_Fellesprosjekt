@@ -79,19 +79,19 @@ class Controller:
     # True if username is taken
     # False if available
     def get_user_logged_in(self, username):
+        self.lock.acquire()
         res = self.users.count(username) == 1
+        self.lock.release()
 
         return res
 
     def set_user_logged_in(self, username):
-        self.lock.acquire()
-        res = False
         if not self.get_user_logged_in(username):
+            self.lock.acquire()
             self.users.append(username)
-            res = True
-        self.lock.release()
-
-        return res
+            self.lock.release()
+            return True
+        return False
 
     def get_all_online(self):
         self.lock.acquire()
