@@ -130,23 +130,23 @@ class Client(tk.Frame):
 
         self.output("Logged out, good bye!")'''
 
-    def destroy_window(self, window):
-        window.destroy()
-        window = None
-        pass
+    # def destroy_window(self, window):
+        # window.destroy()
+        # window = None
+        # pass
 
     def login(self):
         if self.username:
             self.output("You are already logged in!")
             return
 
-        if self.login_window:
-            self.login_window.focus()
-            return
+        # if self.login_window:
+            # self.login_window.focus()
+            # return
 
         self.login_window = tk.Toplevel()
         self.login_window.title("Log in")
-        self.login_window.protocol("WM_DELETE_WINDOW", self.destroy_window(self.login_window))
+        # self.login_window.protocol("WM_DELETE_WINDOW", self.destroy_window(self.login_window))
 
         self.output(str(self.login_window.attributes()))
 
