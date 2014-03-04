@@ -60,14 +60,13 @@ class Controller:
         if client_handler in self.client_handlers:
             self.client_handlers.remove(client_handler)
 
-    def broadcast(self, message, __except):
+    def broadcast(self, message):
         chatMessageResponse = ChatResponseMessage()
         chatMessageResponse.set_success(message)
         json_data = chatMessageResponse.get_JSON()
 
         for client_handler in self.client_handlers:
-            if client_handler != __except:
-                client_handler.send(json_data)
+            client_handler.send(json_data)
 
     # Returns:
     # True if username is taken
@@ -92,7 +91,7 @@ class Controller:
         return match_obj is not None and match_obj.group(0) == username
 
     # sender is username of sender (for use in database)
-    def notify_message(self, message, sender, client_handler):
+    def notify_message(self, message, sender):
         query = "INSERT INTO chat_messages (message, sender, timestamp) VALUES (?, ?, ?)"
         now_as_int = int(time.time())
         self.db_cursor.execute(query, (message, sender, now_as_int))
@@ -102,7 +101,7 @@ class Controller:
         message_row = (message_id, message, sender, now_as_int)
         self.messages.append(message_row)
 
-        self.broadcast(message_row, client_handler)
+        self.broadcast(message_row)
 
     def set_user_logged_out(self, username):
         if username in self.users:
@@ -265,7 +264,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
                                 responseMessage = None
 
                                 # This also broadcasts to everyone except the sender
-                                controller.notify_message(message, self.username, self)
+                                controller.notify_message(message, self.username)
 
                     elif request == "listUsers":
                         responseMessage = ListUsersResponseMessage()
