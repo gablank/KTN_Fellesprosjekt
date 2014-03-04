@@ -358,6 +358,7 @@ class ServerStopper(threading.Thread):
             if _input == "stop":
                 print("Shutting down server")
                 server.shutdown()
+                server.server_close()
                 break
 
 
