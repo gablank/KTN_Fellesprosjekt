@@ -138,6 +138,12 @@ class Controller:
             self.lock.release()
             self.notify_message(username + " has logged out!", "SERVER")
 
+    def shutdown(self):
+        self.lock.acquire()
+        for client_handler in self.client_handlers:
+            client_handler.shutdown()
+        self.lock.release()
+
 
 
 class ClientHandler(socketserver.BaseRequestHandler):
@@ -338,9 +344,13 @@ class ClientHandler(socketserver.BaseRequestHandler):
         self.controller.unregister_client_handler(self)
         self.connection.close()
 
+    def shutdown(self):
+        self.connection.close()
+
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
+
 
 class ServerStopper(threading.Thread):
     def __init__(self, server):
@@ -377,3 +387,5 @@ if __name__ == "__main__":
     server.serve_forever()
 
     serverStopper.join()
+
+    ClientHandler.controller.shutdown()
