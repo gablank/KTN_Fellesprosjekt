@@ -17,6 +17,8 @@ class Client(tk.Frame):
     def __init__(self, host, port, master):
         self.gui = master is not None
 
+        self.username = None
+
         if self.gui:
             tk.Frame.__init__(self, master)
             master.title("KTN Project client")
@@ -27,7 +29,7 @@ class Client(tk.Frame):
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.connection.connect((host, port))
- 
+
         self.login_response_event = threading.Event()
 
         # Start the message worker (which listens on the connection and notifies us if it has received a message)
@@ -37,7 +39,6 @@ class Client(tk.Frame):
         # Keep a list of messages client side too, for easier terminal formatting and deletion of messages
         self.messages = []
 
-        self.username = None
 
         self.run = True
 
@@ -127,6 +128,10 @@ class Client(tk.Frame):
         self.output("Logged out, good bye!")'''
 
     def login(self):
+        if self.username:
+            self.output("You are already logged in!")
+            return;
+
         self.login_window = tk.Toplevel()
         self.login_window.title("Log in")
 
@@ -207,7 +212,7 @@ class Client(tk.Frame):
 
     # Message is already decoded from JSON
     def message_received(self, data):
-        #print("Message received from server: " + str(data))
+        # print("Message received from server: " + str(data))
         if "response" in data:
             if data["response"] == "login":
                 # Success
@@ -294,6 +299,6 @@ class Client(tk.Frame):
 if __name__ == "__main__":
     root = tk.Tk()
     client = Client('www.furic.pw', 9998, root)
-    #client = Client('localhost', 9999, root)
+    # client = Client('localhost', 9999, root)
 
     client.mainloop()
