@@ -135,6 +135,8 @@ class ClientHandler(socketserver.BaseRequestHandler):
     def receive_message(self):
         num_brackets = 0  # "Net worth" of brackets, that is: Number of { minus number of }
         buffer_pos = 0    # How far in the buffer we've searched for an object
+        escape_char = False
+        inside_quotes = False
 
         # Essentially: while we haven't found a complete object
         while True:
@@ -144,8 +146,6 @@ class ClientHandler(socketserver.BaseRequestHandler):
             # and we want to serve those at once
             # If we didn't do this we would have to WAIT for self.connection.recv() to return, meaning that we
             # actually have to receive more data to provide our server with data we already have
-            escape_char = False
-            inside_quotes = False
             for i in range(buffer_pos, len(self.recv_buffer)):
                 buffer_pos = i+1
                 if escape_char:
