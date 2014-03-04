@@ -18,6 +18,8 @@ class Client(tk.Frame):
         self.gui = master is not None
 
         self.username = None
+        self.login_window = None
+
 
         if self.gui:
             tk.Frame.__init__(self, master)
@@ -25,6 +27,7 @@ class Client(tk.Frame):
             self.config()
             self.pack()
             self.createWidgets()
+
 
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -127,13 +130,25 @@ class Client(tk.Frame):
 
         self.output("Logged out, good bye!")'''
 
+    def destroy_window(self, window):
+        window.destroy()
+        window = None
+        pass
+
     def login(self):
         if self.username:
             self.output("You are already logged in!")
-            return;
+            return
+
+        if self.login_window:
+            self.login_window.focus()
+            return
 
         self.login_window = tk.Toplevel()
         self.login_window.title("Log in")
+        self.login_window.protocol("WM_DELETE_WINDOW", self.destroy_window(self.login_window))
+
+        self.output(str(self.login_window.attributes()))
 
         username_label = tk.Label(self.login_window, text="You need to login!\nUsername: ")
         username_label.pack()
@@ -191,8 +206,10 @@ class Client(tk.Frame):
         close_btn.pack()
 
     def logout(self):
-        logoutRequestMessage = LogoutRequestMessage()
-        self.send_data(logoutRequestMessage)
+        if self.username:
+            logoutRequestMessage = LogoutRequestMessage()
+            self.send_data(logoutRequestMessage)
+
         self.run = False
 
         if self.gui:
@@ -299,6 +316,7 @@ class Client(tk.Frame):
 if __name__ == "__main__":
     root = tk.Tk()
     client = Client('www.furic.pw', 9998, root)
+    root.protocol('WM_DELETE_WINDOW', client.logout)
     # client = Client('localhost', 9999, root)
 
     client.mainloop()
