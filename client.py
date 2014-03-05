@@ -211,9 +211,14 @@ class Client(tk.Frame):
             if cmd == "logout":
                 self.logout()
 
-            elif cmd == "listusers":
+            elif cmd == "users":
                 listUsersRequestMessage = ListUsersRequestMessage()
                 self.send_data(listUsersRequestMessage)
+
+            elif cmd == "ping":
+                pingRequestMessage = PingRequestMessage()
+                pingRequestMessage.set_time(time.time())
+                self.send_data(pingRequestMessage)
 
             else:
                 self.output("Unknown command: /" + cmd)
@@ -296,6 +301,10 @@ class Client(tk.Frame):
                 users_online_string = "Online users: " + ", ".join(data["users"])
                 self.output(users_online_string)
 
+            elif data["response"] == "ping":
+                ping_string = "Ping: " + str(time.time() - data["time"]) + "ms"
+                self.output(ping_string)
+
         else:
             self.output("Server makes no sense, me don't understand!")
 
@@ -334,8 +343,8 @@ class Client(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    client = Client('www.furic.pw', 9998, root)
-    #client = Client('localhost', 9998, root)
+    #client = Client('www.furic.pw', 9998, root)
+    client = Client('localhost', 9998, root)
     root.protocol('WM_DELETE_WINDOW', client.logout)
 
     client.mainloop()

@@ -117,6 +117,10 @@ class ClientHandler(threading.Thread):
                     responseMessage = ListUsersResponseMessage()
                     responseMessage.set_users(self.server.get_all_online())
 
+                elif request == "ping":
+                    responseMessage = PingResponseMessage()
+                    responseMessage.set_time(data["time"])
+
                 elif request == "logout":
                     responseMessage = LogoutResponseMessage()
 

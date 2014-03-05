@@ -126,7 +126,7 @@ class ThreadedTCPServer(socketserver.TCPServer):
         self.lock.acquire()
         available = True
         for client_handler in self.client_handlers:
-            if client_handler.username == username:
+            if client_handler.username is not None and client_handler.username.lower() == username.lower():
                 available = False
                 break
         self.lock.release()
