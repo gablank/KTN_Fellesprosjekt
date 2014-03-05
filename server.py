@@ -52,7 +52,7 @@ class Controller:
     def load_chat_messages(self):
         # Fetch all messages ordered by oldest first
         # TODO: Fetching WILL get slower as the table grows
-        query = "SELECT * FROM chat_messages ORDER BY timestamp ASC LIMIT 100;"
+        query = "SELECT * FROM (SELECT * FROM chat_messages ORDER BY timestamp DESC LIMIT 100) ORDER BY timestamp ASC;"
 
         # Row is a tuple: (id, message, sender, timestamp)
         for row in self.db_cursor.execute(query):
@@ -88,7 +88,9 @@ class Controller:
         return res
 
     def set_user_logged_in(self, username):
-        if not self.get_user_logged_in(username) and username not in self.reserved_usernames:
+        if not self.get_user_logged_in(username)\
+            and username not in self.reserved_usernames\
+            and len(username) <= 20:
             self.lock.acquire()
             self.users.append(username)
             self.lock.release()
@@ -135,6 +137,12 @@ class Controller:
             self.users.remove(username)
             self.lock.release()
             self.notify_message(username + " has logged out!", "SERVER")
+
+    def shutdown(self):
+        self.lock.acquire()
+        for client_handler in self.client_handlers:
+            client_handler.shutdown()
+        self.lock.release()
 
 
 
@@ -336,9 +344,33 @@ class ClientHandler(socketserver.BaseRequestHandler):
         self.controller.unregister_client_handler(self)
         self.connection.close()
 
+    def shutdown(self):
+        self.connection.close()
+
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
+
+
+class ServerStopper(threading.Thread):
+    def __init__(self, server):
+        super().__init__()
+        self.server = server
+
+    def run(self):
+        while True:
+            print("Waiting for input")
+            _input = sys.stdin.readline().strip()
+
+            print("Got input: " + _input)
+
+
+            if _input == "stop":
+                print("Shutting down server")
+                server.shutdown()
+                server.server_close()
+                break
+
 
 if __name__ == "__main__":
     HOST = ''
@@ -349,18 +381,11 @@ if __name__ == "__main__":
     server = ThreadedTCPServer((HOST, PORT), ClientHandler)
     server.daemon_threads = True
 
-    server_thread = threading.Thread(target=server.serve_forever)
-    server_thread.start()
+    serverStopper = ServerStopper(server)
+    serverStopper.start()
 
-    try:
-        while True:
-            print("I am server: ", end="")
-            _input = sys.stdin.readline().strip()
+    server.serve_forever()
 
-            if _input == "stop":
-                server.shutdown()
+    serverStopper.join()
 
-    # So we can shutdown with ctrl+c as well
-    except KeyboardInterrupt:
-        server.shutdown()
-
+    ClientHandler.controller.shutdown()
