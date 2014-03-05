@@ -1,6 +1,7 @@
 class BufferedMessageListener(object):
     def __init__(self, connection):
         self.connection = connection
+        self.recv_buffer = ""
 
     # Receive data until we have one or more COMPLETE JSON objects to deliver
     # Returns: Exactly *ONE* JSON object (as string)

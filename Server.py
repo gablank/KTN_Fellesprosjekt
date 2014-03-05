@@ -5,16 +5,19 @@ if sys.version_info[0] != 3:
     sys.exit(1)
 
 import socketserver
+import socket
 import threading
 import time       # Get current time (for displaying when a chat message was sent)
 import re         # For validation of username
 import sqlite3    # Database connection
+import queue
 from Message import *
 from ClientHandler import ClientHandler
 
 
 class ThreadedTCPServer(socketserver.TCPServer):
     def __init__(self, addr, clientHandler):
+        self.allow_reuse_address = True
         socketserver.TCPServer.__init__(self, addr, clientHandler)
 
         self.messages = []
@@ -22,6 +25,10 @@ class ThreadedTCPServer(socketserver.TCPServer):
         self.client_handlers = []
 
         self.reserved_usernames = ["SERVER"]
+
+        # FIFO queue
+        # Queue already implements all necessary thread locking mechanisms
+        self.queue = queue.Queue()
 
         # http://effbot.org/zone/thread-synchronization.htm
         self.lock = threading.RLock()
@@ -45,7 +52,34 @@ class ThreadedTCPServer(socketserver.TCPServer):
         # Load chat messages from database
         self.load_chat_messages()
 
-    def finish_request(self, request, client_address):
+    def queue_worker(self):
+        self.notify_message("Server has started")
+        while True:
+            task = self.queue.get()
+
+            if task[0] == "message":
+                message = task[1]
+                sender = task[2]
+                self.notify_message(message, sender)
+
+            elif task[0] == "shutdown":
+                print("Shutting down server...")
+                self.notify_message("Server is shutting down")
+                # Shut down all client handler threads
+                self.lock.acquire()
+                for client_handler in self.client_handlers:
+                    self.client_handlers.remove(client_handler)
+                    self.shutdown_client_handler(client_handler)
+                    client_handler.join()
+                self.lock.release()
+                self.shutdown()
+
+                self.socket.shutdown(socket.SHUT_RDWR)
+                self.server_close()
+                break
+
+    # Overrides method from BaseServer (parent of TCPServer)
+    def process_request(self, request, client_address):
         # RequestHandlerClass is ClientHandler
         client_handler = self.RequestHandlerClass(request, client_address, self)
         client_handler.start()
@@ -70,19 +104,12 @@ class ThreadedTCPServer(socketserver.TCPServer):
             client_handler.send(json_data)
         self.lock.release()
 
-    # Returns:
-    # True if username is taken
-    # False if available
-    def get_user_logged_in(self, username):
-        self.lock.acquire()
-        res = self.users.count(username) == 1
-        self.lock.release()
-
-        return res
-
     def get_all_online(self):
         self.lock.acquire()
-        users = self.users
+        users = []
+        for client_handler in self.client_handlers:
+            if client_handler.username is not None:
+                users.append(client_handler.username)
         self.lock.release()
 
         return users
@@ -112,8 +139,13 @@ class ThreadedTCPServer(socketserver.TCPServer):
             and username not in self.reserved_usernames \
             and len(username) <= 20
 
+    # Add a message to the queue
+    def add_message(self, message, sender="SERVER"):
+        task = ["message", message, sender]
+        self.queue.put(task)
+
     # sender is username of sender (for use in database)
-    def notify_message(self, message, sender):
+    def notify_message(self, message, sender="SERVER"):
         query = "INSERT INTO chat_messages (message, sender, timestamp) VALUES (?, ?, ?)"
         now_as_int = int(time.time())
         self.db_cursor.execute(query, (message, sender, now_as_int))
@@ -128,53 +160,57 @@ class ThreadedTCPServer(socketserver.TCPServer):
         self.lock.release()
 
     def notify_login(self, username):
-        self.notify_message(username + " has logged in!", "SERVER")
+        self.add_message(username + " has logged in!")
 
     def notify_logout(self, username):
-        self.notify_message(username + " has logged out!", "SERVER")
-
-    # Called by ClientHandler
-    # Closes the ClientHandler's socket and joins() the thread
-    # Removes it from list of ClientHandlers
-    def connection_closed(self, client_handler):
-        self.lock.acquire()
-        self.shutdown_client_handler(client_handler)
-        self.lock.release()
+        self.add_message(username + " has logged out!")
 
     def shutdown_client_handler(self, client_handler):
         client_handler.shutdown()
-        self.client_handlers.remove(client_handler)
 
-    def shutdown(self):
-        self.lock.acquire()
-        for client_handler in self.client_handlers:
-            self.shutdown_client_handler(client_handler)
-        self.lock.release()
+    # Shuts down all ClientHandlers, adds task to queue telling queue worker to shutdown
+    # then shuts itself down
+    def shutdown_server(self):
+        self.queue.put(["shutdown"])
+
 
 
 
 if __name__ == "__main__":
     HOST = ''
-    # HOST = 'localhost'
     PORT = 9998
 
     # Create the server, binding to localhost on port 9999
     server = ThreadedTCPServer((HOST, PORT), ClientHandler)
     server.daemon_threads = True
 
-    server_thread = threading.Thread(target=server.serve_forever)
+    queue_worker = threading.Thread(target=server.queue_worker, name="Queue worker thread")
+    queue_worker.start()
+
+    server_thread = threading.Thread(target=server.serve_forever, name="Server socket thread")
     server_thread.start()
 
-    while True:
-        print("Waiting for input")
-        _input = sys.stdin.readline().strip()
+    try:
+        while True:
+            print("Waiting for input")
+            _input = ""
+            while _input == "":
+                _input = sys.stdin.readline().strip()
 
-        print("Got input: " + _input)
+            print("Got input: " + _input)
 
-        if _input == "stop":
-            print("Shutting down server")
-            server.shutdown()
-            server.server_close()
-            break
+            if _input == "stop":
+                break
+    except KeyboardInterrupt:
+        print("Got KeyboardInterrupt")
+        pass
 
+    print("Shutting down server")
+    server.shutdown_server()
+
+    print("Joining server thread")
     server_thread.join()
+    print("Joining queue worker thread")
+    queue_worker.join()
+
+    print(threading.active_count())
