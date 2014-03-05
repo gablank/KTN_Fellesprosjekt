@@ -8,42 +8,35 @@ import socketserver
 import json       # decode network data
 from BufferedMessageListener import BufferedMessageListener
 from Message import *
+import threading
 
 
-class ClientHandler(socketserver.BaseRequestHandler):
+class ClientHandler(threading.Thread):
     def __init__(self, request, client_address, server):
-        self.recv_buffer = ""
+        # Call init of Thread
+        threading.Thread.__init__(self)
 
+        # Reference to server
+        self.server = server
+        # Get a reference to the socket object
+        self.connection = request
         # Initialize username to None so we know the user isn't logged in
         self.username = None
-
-        # Initialized in handle()
-        self.buffered_receiver = None
-
-        # This IMMEDIATELY calls the handle() function
-        super().__init__(request, client_address, server)
+        # Returns exactly one JSON object (as utf-8 encoded string, so it has to be decoded)
+        self.buffered_receiver = BufferedMessageListener(self.connection)
+        # Get the remote ip address of the socket
+        self.ip = client_address[0]
+        # Get the remote port number of the socket
+        self.port = client_address[1]
 
     def send(self, message):
         message_as_bytes = bytes(message, "UTF-8")
         try:
             self.connection.sendall(message_as_bytes)
         except OSError:
-            self.server.unregister_client_handler(self)
-            self.server.set_user_logged_out(self.username)
+            self.server.connection_closed()
 
-    # Socket is closed when we return from this function
-    def handle(self):
-        # Get a reference to the socket object
-        self.connection = self.request
-
-        self.buffered_receiver = BufferedMessageListener(self.connection)
-
-        # Get the remote ip address of the socket
-        self.ip = self.client_address[0]
-
-        # Get the remote port number of the socket
-        self.port = self.client_address[1]
-
+    def run(self):
         print('Client connected @' + self.ip + ':' + str(self.port))
 
         while True:

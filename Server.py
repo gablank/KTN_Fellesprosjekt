@@ -13,7 +13,7 @@ from Message import *
 from ClientHandler import ClientHandler
 
 
-class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+class ThreadedTCPServer(socketserver.TCPServer):
     def __init__(self, addr, clientHandler):
         socketserver.TCPServer.__init__(self, addr, clientHandler)
 
@@ -23,7 +23,8 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.reserved_usernames = ["SERVER"]
 
-        self.lock = threading.Lock()
+        # http://effbot.org/zone/thread-synchronization.htm
+        self.lock = threading.RLock()
 
         # Connect to database called "chat.db" - create it if it doesn't exist
         # check_same_thread=False enables access to the object from different threads
@@ -44,6 +45,12 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         # Load chat messages from database
         self.load_chat_messages()
 
+    def finish_request(self, request, client_address):
+        # RequestHandlerClass is ClientHandler
+        client_handler = self.RequestHandlerClass(request, client_address, self)
+        client_handler.start()
+        self.client_handlers.append(client_handler)
+
     def load_chat_messages(self):
         # Fetch all messages ordered by oldest first
         # TODO: Fetching WILL get slower as the table grows
@@ -53,24 +60,15 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         for row in self.db_cursor.execute(query):
             self.messages.append(row)
 
-    def register_client_handler(self, client_handler):
-        self.lock.acquire()
-        self.client_handlers.append(client_handler)
-        self.lock.release()
-
-    def unregister_client_handler(self, client_handler):
-        self.lock.acquire()
-        if client_handler in self.client_handlers:
-            self.client_handlers.remove(client_handler)
-        self.lock.release()
-
     def broadcast(self, message):
+        self.lock.acquire()
         chatMessageResponse = ChatResponseMessage()
         chatMessageResponse.set_success(message)
         json_data = chatMessageResponse.get_JSON()
 
         for client_handler in self.client_handlers:
             client_handler.send(json_data)
+        self.lock.release()
 
     # Returns:
     # True if username is taken
@@ -81,17 +79,6 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.lock.release()
 
         return res
-
-    def set_user_logged_in(self, username):
-        if not self.get_user_logged_in(username) \
-            and username not in self.reserved_usernames \
-            and len(username) <= 20:
-            self.lock.acquire()
-            self.users.append(username)
-            self.lock.release()
-            self.notify_message(username + " has logged in!", "SERVER")
-            return True
-        return False
 
     def get_all_online(self):
         self.lock.acquire()
@@ -107,9 +94,23 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         return res
 
+    # Check if a username is taken already
+    def available_username(self, username):
+        self.lock.acquire()
+        available = True
+        for client_handler in self.client_handlers:
+            if client_handler.username == username:
+                available = False
+                break
+        self.lock.release()
+        return available
+
     def valid_username(self, username):
         match_obj = re.search(u'[A-zæøåÆØÅ_0-9]+', username)
-        return match_obj is not None and match_obj.group(0) == username
+        return match_obj is not None \
+            and match_obj.group(0) == username \
+            and username not in self.reserved_usernames \
+            and len(username) <= 20
 
     # sender is username of sender (for use in database)
     def notify_message(self, message, sender):
@@ -126,19 +127,28 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.broadcast(message_row)
         self.lock.release()
 
-    def set_user_logged_out(self, username):
+    def notify_login(self, username):
+        self.notify_message(username + " has logged in!", "SERVER")
+
+    def notify_logout(self, username):
+        self.notify_message(username + " has logged out!", "SERVER")
+
+    # Called by ClientHandler
+    # Closes the ClientHandler's socket and joins() the thread
+    # Removes it from list of ClientHandlers
+    def connection_closed(self, client_handler):
         self.lock.acquire()
-        if username in self.users:
-            self.users.remove(username)
-            self.lock.release()
-            self.notify_message(username + " has logged out!", "SERVER")
-            self.lock.acquire()  # Hack
+        self.shutdown_client_handler(client_handler)
         self.lock.release()
+
+    def shutdown_client_handler(self, client_handler):
+        client_handler.shutdown()
+        self.client_handlers.remove(client_handler)
 
     def shutdown(self):
         self.lock.acquire()
         for client_handler in self.client_handlers:
-            client_handler.shutdown()
+            self.shutdown_client_handler(client_handler)
         self.lock.release()
 
 
@@ -154,8 +164,6 @@ if __name__ == "__main__":
 
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.start()
-
-    #ClientHandler.controller.shutdown()
 
     while True:
         print("Waiting for input")
