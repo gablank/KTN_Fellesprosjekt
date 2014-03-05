@@ -305,7 +305,9 @@ class Client(tk.Frame):
 
     # Server closed connection
     def connection_closed(self):
-        self.message_worker.join()  # Wait for listener to exit
+        #self.message_worker.join()  # Wait for listener to exit
+        # TODO: Somehow tell the client thread that we lost connection
+        self.run = False
 
     # data should be a Message object
     def send_data(self, data):
@@ -333,7 +335,7 @@ class Client(tk.Frame):
 if __name__ == "__main__":
     root = tk.Tk()
     client = Client('www.furic.pw', 9998, root)
+    #client = Client('localhost', 9998, root)
     root.protocol('WM_DELETE_WINDOW', client.logout)
-    # client = Client('localhost', 9999, root)
 
     client.mainloop()
