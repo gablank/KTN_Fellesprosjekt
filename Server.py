@@ -11,6 +11,7 @@ import time       # Get current time (for displaying when a chat message was sen
 import re         # For validation of username
 import sqlite3    # Database connection
 import queue
+import datetime
 from Message import *
 from ClientHandler import ClientHandler
 
@@ -19,6 +20,8 @@ class ThreadedTCPServer(socketserver.TCPServer):
     def __init__(self, addr, clientHandler):
         self.allow_reuse_address = True
         socketserver.TCPServer.__init__(self, addr, clientHandler)
+
+        self.boot_time = datetime.datetime.today()
 
         self.messages = []
         self.users = []
@@ -144,6 +147,18 @@ class ThreadedTCPServer(socketserver.TCPServer):
             and username.lower() not in self.reserved_usernames \
             and len(username) <= 20
 
+    def get_uptime(self):
+        now = datetime.datetime.today()
+        with self.lock:
+            delta = now - self.boot_time
+        seconds = delta.seconds
+        mins = seconds // 60
+        seconds %= 60
+        hours = mins // 60
+        mins %= 60
+
+        return str(delta.days) + " days, " + str(hours) + "h " + str(mins).zfill(2) + "m " + str(seconds).zfill(2) + "s"
+
     # Add a message to the queue
     def add_message(self, message, sender="SERVER"):
         task = ["message", message, sender]
@@ -213,7 +228,7 @@ if __name__ == "__main__":
         print("Got KeyboardInterrupt")
         pass
 
-    print("Shutting down server")
+    print("Shutting down server after " + server.get_uptime() + " of operation.")
     server.shutdown_server()
 
     print("Joining server thread")

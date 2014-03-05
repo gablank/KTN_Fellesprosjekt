@@ -121,6 +121,10 @@ class ClientHandler(threading.Thread):
                     responseMessage = PingResponseMessage()
                     responseMessage.set_time(data["time"])
 
+                elif request == "uptime":
+                    responseMessage = UptimeResponseMessage()
+                    responseMessage.set_time(self.server.get_uptime())
+
                 elif request == "logout":
                     responseMessage = LogoutResponseMessage()
 
