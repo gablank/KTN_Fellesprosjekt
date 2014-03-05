@@ -207,9 +207,6 @@ if __name__ == "__main__":
     server = ThreadedTCPServer((HOST, PORT), ClientHandler)
     server.daemon_threads = True
 
-    time.sleep(5)
-    print(server.get_uptime())
-
     queue_worker = threading.Thread(target=server.queue_worker, name="Queue worker thread")
     queue_worker.start()
 
@@ -231,7 +228,7 @@ if __name__ == "__main__":
         print("Got KeyboardInterrupt")
         pass
 
-    print("Shutting down server")
+    print("Shutting down server after " + server.get_uptime() + " of operation.")
     server.shutdown_server()
 
     print("Joining server thread")
