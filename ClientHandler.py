@@ -163,3 +163,5 @@ class ClientHandler(threading.Thread):
                 self.connection.close()
             except OSError:  # Transport endpoint not connected => already closed. Good!
                 pass
+
+            self.server.client_handler_dead(self)

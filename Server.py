@@ -62,16 +62,21 @@ class ThreadedTCPServer(socketserver.TCPServer):
                 sender = task[2]
                 self.notify_message(message, sender)
 
+            elif task[0] == "dead_client_handler":
+                client_handler = task[1]
+                with self.lock:
+                    self.client_handlers.remove(client_handler)
+                    client_handler.join()
+
             elif task[0] == "shutdown":
                 print("Shutting down server...")
                 self.notify_message("Server is shutting down")
                 # Shut down all client handler threads
-                self.lock.acquire()
-                for client_handler in self.client_handlers:
-                    self.shutdown_client_handler(client_handler)
-                    client_handler.join()
-                self.client_handlers = []
-                self.lock.release()
+                with self.lock:
+                    for client_handler in self.client_handlers:
+                        self.shutdown_client_handler(client_handler)
+                        client_handler.join()
+                    self.client_handlers = []
                 self.shutdown()
 
                 self.socket.shutdown(socket.SHUT_RDWR)
@@ -164,6 +169,9 @@ class ThreadedTCPServer(socketserver.TCPServer):
 
     def notify_logout(self, username):
         self.add_message(username + " has logged out!")
+
+    def client_handler_dead(self, client_handler):
+        self.queue.put(["dead_client_handler", client_handler])
 
     def shutdown_client_handler(self, client_handler):
         client_handler.shutdown()
