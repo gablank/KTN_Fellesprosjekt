@@ -211,9 +211,14 @@ class Client(tk.Frame):
             if cmd == "logout":
                 self.logout()
 
-            elif cmd == "listusers":
+            elif cmd == "users":
                 listUsersRequestMessage = ListUsersRequestMessage()
                 self.send_data(listUsersRequestMessage)
+
+            elif cmd == "ping":
+                pingRequestMessage = PingRequestMessage()
+                pingRequestMessage.set_time(time.time())
+                self.send_data(pingRequestMessage)
 
             else:
                 self.output("Unknown command: /" + cmd)
@@ -295,6 +300,10 @@ class Client(tk.Frame):
             elif data["response"] == "listUsers":
                 users_online_string = "Online users: " + ", ".join(data["users"])
                 self.output(users_online_string)
+
+            elif data["response"] == "ping":
+                ping_string = "Ping: " + str(((time.time() - data["time"]) * 1000) // 1) + "ms"
+                self.output(ping_string)
 
         else:
             self.output("Server makes no sense, me don't understand!")

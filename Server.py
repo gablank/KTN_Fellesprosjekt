@@ -24,7 +24,7 @@ class ThreadedTCPServer(socketserver.TCPServer):
         self.users = []
         self.client_handlers = []
 
-        self.reserved_usernames = ["SERVER"]
+        self.reserved_usernames = ["server"]
 
         # FIFO queue
         # Queue already implements all necessary thread locking mechanisms
@@ -62,16 +62,21 @@ class ThreadedTCPServer(socketserver.TCPServer):
                 sender = task[2]
                 self.notify_message(message, sender)
 
+            elif task[0] == "dead_client_handler":
+                client_handler = task[1]
+                with self.lock:
+                    self.client_handlers.remove(client_handler)
+                    client_handler.join()
+
             elif task[0] == "shutdown":
                 print("Shutting down server...")
                 self.notify_message("Server is shutting down")
                 # Shut down all client handler threads
-                self.lock.acquire()
-                for client_handler in self.client_handlers:
-                    self.client_handlers.remove(client_handler)
-                    self.shutdown_client_handler(client_handler)
-                    client_handler.join()
-                self.lock.release()
+                with self.lock:
+                    for client_handler in self.client_handlers:
+                        self.shutdown_client_handler(client_handler)
+                        client_handler.join()
+                    self.client_handlers = []
                 self.shutdown()
 
                 self.socket.shutdown(socket.SHUT_RDWR)
@@ -126,7 +131,7 @@ class ThreadedTCPServer(socketserver.TCPServer):
         self.lock.acquire()
         available = True
         for client_handler in self.client_handlers:
-            if client_handler.username == username:
+            if client_handler.username is not None and client_handler.username.lower() == username.lower():
                 available = False
                 break
         self.lock.release()
@@ -136,7 +141,7 @@ class ThreadedTCPServer(socketserver.TCPServer):
         match_obj = re.search(u'[A-zæøåÆØÅ_0-9]+', username)
         return match_obj is not None \
             and match_obj.group(0) == username \
-            and username not in self.reserved_usernames \
+            and username.lower() not in self.reserved_usernames \
             and len(username) <= 20
 
     # Add a message to the queue
@@ -164,6 +169,9 @@ class ThreadedTCPServer(socketserver.TCPServer):
 
     def notify_logout(self, username):
         self.add_message(username + " has logged out!")
+
+    def client_handler_dead(self, client_handler):
+        self.queue.put(["dead_client_handler", client_handler])
 
     def shutdown_client_handler(self, client_handler):
         client_handler.shutdown()
@@ -213,4 +221,4 @@ if __name__ == "__main__":
     print("Joining queue worker thread")
     queue_worker.join()
 
-    print(threading.active_count())
+    print("Good bye")

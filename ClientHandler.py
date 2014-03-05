@@ -108,7 +108,6 @@ class ClientHandler(threading.Thread):
 
                         # Everything is fine, send message back to sender and then broadcast to everyone else
                         else:
-                            # responseMessage.set_success(message)
                             responseMessage = None
 
                             # This also broadcasts to everyone
@@ -118,10 +117,14 @@ class ClientHandler(threading.Thread):
                     responseMessage = ListUsersResponseMessage()
                     responseMessage.set_users(self.server.get_all_online())
 
+                elif request == "ping":
+                    responseMessage = PingResponseMessage()
+                    responseMessage.set_time(data["time"])
+
                 elif request == "logout":
                     responseMessage = LogoutResponseMessage()
 
-                    # All is fine, log user out and unregister ourselves so we don't receive broadcasts.
+                    # All is fine, log user out
                     if self.username is not None:
                         responseMessage.set_success(self.username)
                         self.server.notify_logout(self.username)
@@ -155,5 +158,10 @@ class ClientHandler(threading.Thread):
                 self.server.notify_logout(self.username)
 
             self.should_run = False
-            self.connection.shutdown(socket.SHUT_RDWR)
-            self.connection.close()
+            try:
+                self.connection.shutdown(socket.SHUT_RDWR)
+                self.connection.close()
+            except OSError:  # Transport endpoint not connected => already closed. Good!
+                pass
+
+            self.server.client_handler_dead(self)

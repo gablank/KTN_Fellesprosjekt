@@ -47,7 +47,11 @@ class BufferedMessageListener(object):
                     return object_json
 
             # We don't have an object to serve; wait for more data
-            received_bytes = self.connection.recv(1024)
+            try:
+                received_bytes = self.connection.recv(1024)
+            except ConnectionResetError:
+                received_bytes = ""
+                print("Connection was closed.")
 
             # Connection was closed
             if len(received_bytes) == 0:

@@ -142,6 +142,28 @@ class ListUsersResponseMessage(Message):
         self.complete = True
 
 
+class PingRequestMessage(Message):
+    def __init__(self):
+        super(PingRequestMessage, self).__init__()
+        self.message_attributes["request"] = "ping"
+
+    def set_time(self, time):
+        self.complete_guard()
+        self.message_attributes["time"] = time
+        self.complete = True
+
+
+class PingResponseMessage(Message):
+    def __init__(self):
+        super(PingResponseMessage, self).__init__()
+        self.message_attributes["response"] = "ping"
+
+    def set_time(self, time):
+        self.complete_guard()
+        self.message_attributes["time"] = time
+        self.complete = True
+
+
 # Testing
 if __name__ == "__main__":
     print("Testing LoginRequestMessage")

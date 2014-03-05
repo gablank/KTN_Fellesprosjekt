@@ -12,4 +12,5 @@ git checkout Experimental
 
 scp -P $PORT Server.py $USER@$SERVER:$DIRECTORY"Experimental/server.py"
 scp -P $PORT ClientHandler.py $USER@$SERVER:$DIRECTORY"Experimental/ClientHandler.py"
+scp -P $PORT BufferedMessageListener.py $USER@$SERVER:$DIRECTORY"Experimental/BufferedMessageListener.py"
 scp -P $PORT Message.py $USER@$SERVER:$DIRECTORY"Experimental/Message.py"
