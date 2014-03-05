@@ -302,7 +302,9 @@ class Client(tk.Frame):
                 self.output(users_online_string)
 
             elif data["response"] == "ping":
-                ping_string = "Ping: " + str(((time.time() - data["time"]) * 1000) // 1) + "ms"
+                time_diff = time.time() - data["time"]
+                time_diff_ms = time_diff * 1000
+                ping_string = "Ping: " + str(int(time_diff_ms)) + "ms"
                 self.output(ping_string)
 
         else:
