@@ -10,5 +10,6 @@ scp -P $PORT Message.py $USER@$SERVER:$DIRECTORY"master/"
 
 git checkout Experimental
 
-scp -P $PORT server.py $USER@$SERVER:$DIRECTORY"Experimental/server.py"
+scp -P $PORT Server.py $USER@$SERVER:$DIRECTORY"Experimental/server.py"
+scp -P $PORT ClientHandler.py $USER@$SERVER:$DIRECTORY"Experimental/ClientHandler.py"
 scp -P $PORT Message.py $USER@$SERVER:$DIRECTORY"Experimental/Message.py"
