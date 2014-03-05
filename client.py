@@ -167,7 +167,7 @@ class Client(tk.Frame):
         self.login_window.withdraw()
 
     def hide_about_window(self):
-        self.about_window_withdraw()
+        self.about_window.withdraw()
 
 
     def login(self):
@@ -220,8 +220,21 @@ class Client(tk.Frame):
                 pingRequestMessage.set_time(time.time())
                 self.send_data(pingRequestMessage)
 
+            elif cmd == "uptime":
+                uptimeRequestMessage = UptimeRequestMessage()
+                self.send_data(uptimeRequestMessage)
+
+            elif cmd == "help":
+                self.output("List of commands:")
+                self.output("  /logout: Log out from the server")
+                self.output("  /users:  List online users")
+                self.output("  /ping:   Ping the server and display the RTT")
+                self.output("  /uptime: Display server uptime")
+                self.output("  /help:   Display this message")
+
             else:
                 self.output("Unknown command: /" + cmd)
+                self.output("Use /help for a list of commands")
 
     def about(self):
         self.about_window.deiconify()
@@ -307,6 +320,10 @@ class Client(tk.Frame):
                 ping_string = "Ping: " + str(int(time_diff_ms)) + "ms"
                 self.output(ping_string)
 
+            elif data["response"] == "uptime":
+                server_uptime = "Server uptime: " + data["time"]
+                self.output(server_uptime)
+
         else:
             self.output("Server makes no sense, me don't understand!")
 
@@ -345,8 +362,8 @@ class Client(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    client = Client('www.furic.pw', 9998, root)
-    #client = Client('localhost', 9998, root)
+    #client = Client('www.furic.pw', 9998, root)
+    client = Client('localhost', 9998, root)
     root.protocol('WM_DELETE_WINDOW', client.logout)
 
     client.mainloop()

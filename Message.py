@@ -164,6 +164,26 @@ class PingResponseMessage(Message):
         self.complete = True
 
 
+class UptimeRequestMessage(Message):
+    def __init__(self):
+        super(UptimeRequestMessage, self).__init__()
+        self.message_attributes["request"] = "uptime"
+        self.complete = True
+
+
+class UptimeResponseMessage(Message):
+    def __init__(self):
+        super(UptimeResponseMessage, self).__init__()
+        self.message_attributes["response"] = "uptime"
+
+    def set_time(self, time):
+        self.complete_guard()
+        self.message_attributes["time"] = time
+        self.complete = True
+
+
+
+
 # Testing
 if __name__ == "__main__":
     print("Testing LoginRequestMessage")
