@@ -137,6 +137,8 @@ class Controller:
             self.users.remove(username)
             self.lock.release()
             self.notify_message(username + " has logged out!", "SERVER")
+            self.lock.acquire()  # Hack
+        self.lock.release()
 
     def shutdown(self):
         self.lock.acquire()
