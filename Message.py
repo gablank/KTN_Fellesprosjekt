@@ -61,6 +61,12 @@ class LoginResponseMessage(Message):
         self.message_attributes["error"] = "Name already taken!"
         self.complete = True
 
+    def requires_password(self, username):
+        self.complete_guard()
+        self.message_attributes["username"] = username
+        self.message_attributes["error"] = "That username requires a password!"
+        self.complete = True
+
 
 class ChatRequestMessage(Message):
     def __init__(self):
