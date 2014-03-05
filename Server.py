@@ -24,7 +24,7 @@ class ThreadedTCPServer(socketserver.TCPServer):
         self.users = []
         self.client_handlers = []
 
-        self.reserved_usernames = ["SERVER"]
+        self.reserved_usernames = ["server"]
 
         # FIFO queue
         # Queue already implements all necessary thread locking mechanisms
@@ -68,9 +68,9 @@ class ThreadedTCPServer(socketserver.TCPServer):
                 # Shut down all client handler threads
                 self.lock.acquire()
                 for client_handler in self.client_handlers:
-                    self.client_handlers.remove(client_handler)
                     self.shutdown_client_handler(client_handler)
                     client_handler.join()
+                self.client_handlers = []
                 self.lock.release()
                 self.shutdown()
 
@@ -136,7 +136,7 @@ class ThreadedTCPServer(socketserver.TCPServer):
         match_obj = re.search(u'[A-zæøåÆØÅ_0-9]+', username)
         return match_obj is not None \
             and match_obj.group(0) == username \
-            and username not in self.reserved_usernames \
+            and username.lower() not in self.reserved_usernames \
             and len(username) <= 20
 
     # Add a message to the queue
@@ -213,4 +213,4 @@ if __name__ == "__main__":
     print("Joining queue worker thread")
     queue_worker.join()
 
-    print(threading.active_count())
+    print("Good bye")

@@ -108,7 +108,6 @@ class ClientHandler(threading.Thread):
 
                         # Everything is fine, send message back to sender and then broadcast to everyone else
                         else:
-                            # responseMessage.set_success(message)
                             responseMessage = None
 
                             # This also broadcasts to everyone
@@ -121,7 +120,7 @@ class ClientHandler(threading.Thread):
                 elif request == "logout":
                     responseMessage = LogoutResponseMessage()
 
-                    # All is fine, log user out and unregister ourselves so we don't receive broadcasts.
+                    # All is fine, log user out
                     if self.username is not None:
                         responseMessage.set_success(self.username)
                         self.server.notify_logout(self.username)
