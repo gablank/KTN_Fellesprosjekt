@@ -343,8 +343,8 @@ class Client(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    #client = Client('www.furic.pw', 9998, root)
-    client = Client('localhost', 9998, root)
+    client = Client('www.furic.pw', 9998, root)
+    #client = Client('localhost', 9998, root)
     root.protocol('WM_DELETE_WINDOW', client.logout)
 
     client.mainloop()
