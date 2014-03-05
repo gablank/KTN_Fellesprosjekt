@@ -154,5 +154,8 @@ class ClientHandler(threading.Thread):
                 self.server.notify_logout(self.username)
 
             self.should_run = False
-            self.connection.shutdown(socket.SHUT_RDWR)
-            self.connection.close()
+            try:
+                self.connection.shutdown(socket.SHUT_RDWR)
+                self.connection.close()
+            except OSError:  # Transport endpoint not connected => already closed. Good!
+                pass
