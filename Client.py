@@ -14,19 +14,14 @@ import tkinter as tk
 
 class Client(tk.Frame):
     def __init__(self, host, port, master):
-        self.gui = master is not None
-
         self.username = None
 
-
-        if self.gui:
-            tk.Frame.__init__(self, master)
-            master.title("KTN Project client")
-            self.config()
-            self.pack()
-            self.createWidgets()
-            self.login()
-
+        tk.Frame.__init__(self, master)
+        master.title("KTN Project client")
+        self.config()
+        self.pack()
+        self.create_widgets()
+        self.open_login_window()
 
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -41,34 +36,33 @@ class Client(tk.Frame):
         # Keep a list of messages client side too, for easier terminal formatting and deletion of messages
         self.messages = []
 
-
-    def createWidgets(self):
+    def create_widgets(self):
         menu_bar = tk.Menu(self)
         # tearoff is some weird shit: it allows you to drag the file menu off of the main menu.
         file_menu = tk.Menu(menu_bar, tearoff=0)
-        file_menu.add_command(label="Login", command=self.login)
+        file_menu.add_command(label="Login", command=self.open_login_window)
         file_menu.add_command(label="Logout", command=self.logout)
 
 
         help_menu = tk.Menu(menu_bar, tearoff=0)
-        help_menu.add_command(label="About", command=self.about)
+        help_menu.add_command(label="About", command=self.open_about_window)
 
         menu_bar.add_cascade(label="File", menu=file_menu)
         menu_bar.add_cascade(label="Help", menu=help_menu)
         self.master.config(menu=menu_bar)
 
         # Contains chat text and scrollbar
-        self.chatContainer = tk.Frame(self)
+        self.chat_container = tk.Frame(self)
 
-        self.chat = tk.Text(self.chatContainer, {"state": tk.DISABLED})
+        self.chat = tk.Text(self.chat_container, {"state": tk.DISABLED})
         self.chat.pack(side=tk.LEFT)
 
-        scrollbar = tk.Scrollbar(self.chatContainer)
+        scrollbar = tk.Scrollbar(self.chat_container)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         scrollbar.config(command=self.chat.yview)
         self.chat.config(yscrollcommand=scrollbar.set)
 
-        self.chatContainer.pack(side=tk.TOP)
+        self.chat_container.pack(side=tk.TOP)
 
         # Input field
         self.input_field = tk.Entry(self, width="60")
@@ -111,12 +105,15 @@ class Client(tk.Frame):
     def hide_about_window(self):
         self.about_window.withdraw()
 
-    def login(self):
+    def open_login_window(self):
         if self.username:
             self.output("You are already logged in!")
             return
 
         self.login_window.deiconify()
+
+    def open_about_window(self):
+        self.about_window.deiconify()
 
     def try_login(self, event):
         self.login_response_event.clear()
@@ -173,16 +170,12 @@ class Client(tk.Frame):
                 self.output("Unknown command: /" + cmd)
                 self.output("Use /help for a list of commands")
 
-    def about(self):
-        self.about_window.deiconify()
-
     def logout(self):
         if self.username:
             logout_request_message = LogoutRequestMessage()
             self.send_data(logout_request_message)
 
-        if self.gui:
-            root.destroy()
+        root.destroy()
 
     def send_message(self, message):
         chat_request_message = ChatRequestMessage()
@@ -261,18 +254,13 @@ class Client(tk.Frame):
     def send_data(self, data):
         self.connection.sendall(data.get_JSON().encode("UTF-8"))
 
-    def force_disconnect(self):
-        self.connection.close()
-
     # Output this to console
     def output(self, line):
-        if self.gui:
-            self.chat.config(state=tk.NORMAL)  # Need to set state to NORMAL to be able to modify the contents
-            self.chat.insert(tk.END, line + "\n")  # New line has to be added
-            self.chat.config(state=tk.DISABLED)
-            self.chat.see(tk.END)
-        else:
-            print("\r" + line)
+        self.chat.config(state=tk.NORMAL)  # Need to set state to NORMAL to be able to modify the contents
+        self.chat.insert(tk.END, line + "\n")  # New line has to be added
+        self.chat.config(state=tk.DISABLED)
+        self.chat.see(tk.END)
+
 
 
 if __name__ == "__main__":

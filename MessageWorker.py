@@ -80,11 +80,9 @@ class MessageWorker(Thread):
             if json_data:
                 # print("Received data from server: " + str(json_data))
                 json_data = json.loads(json_data)
-                self.send_data(json_data)
+                self.client.message_received(json_data)
 
             # Server closed connection
             else:
                 run = False
 
-    def send_data(self, data):
-        self.client.message_received(data)

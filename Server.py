@@ -20,7 +20,7 @@ from ClientHandler import ClientHandler
 # when logged in without password: /register <password>
 # then: When logging in the next time you need to enter the password for that username
 
-class ThreadedTCPServer(socketserver.TCPServer):
+class Server(socketserver.TCPServer):
     def __init__(self, addr, clientHandler):
         self.allow_reuse_address = True
         socketserver.TCPServer.__init__(self, addr, clientHandler)
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     PORT = 9998
 
     # Create the server, binding to localhost on port 9999
-    server = ThreadedTCPServer((HOST, PORT), ClientHandler)
+    server = Server((HOST, PORT), ClientHandler)
     server.daemon_threads = True
 
     queue_worker = threading.Thread(target=server.queue_worker, name="Queue worker thread")
