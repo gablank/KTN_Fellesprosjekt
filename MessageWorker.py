@@ -86,7 +86,5 @@ class MessageWorker(Thread):
             else:
                 run = False
 
-        self.client.connection_closed()
-
     def send_data(self, data):
         self.client.message_received(data)
