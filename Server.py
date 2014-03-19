@@ -101,7 +101,6 @@ class ThreadedTCPServer(socketserver.TCPServer):
     # Overrides method from BaseServer (parent of TCPServer)
     def process_request(self, request, client_address):
         # RequestHandlerClass is ClientHandler
-        print(request.gettimeout())
         client_handler = self.RequestHandlerClass(request, client_address, self)
         client_handler.start()
         self.client_handlers.append(client_handler)
@@ -225,8 +224,6 @@ class ThreadedTCPServer(socketserver.TCPServer):
     # then shuts itself down
     def shutdown_server(self):
         self.queue.put(["shutdown"])
-
-
 
 
 if __name__ == "__main__":
